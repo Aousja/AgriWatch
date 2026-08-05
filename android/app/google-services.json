@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "603632933825",
+    "project_id": "agriwatch-pakistan",
+    "storage_bucket": "agriwatch-pakistan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:603632933825:android:dde030c7928955316bad40",
+        "android_client_info": {
+          "package_name": "com.example.agriwatch"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLq7Yjtd6ShlCQixTfTS9fjprTZvjQs6Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
