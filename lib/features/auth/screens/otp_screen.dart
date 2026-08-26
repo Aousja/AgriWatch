@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
 
 import 'package:agriwatch/features/auth/widgets/auth_button.dart';
 import 'package:agriwatch/features/auth/widgets/otp_input.dart';
@@ -9,6 +10,7 @@ import '../services/firebase_auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lottie/lottie.dart';
 import 'package:agriwatch/core/config/app_config.dart';
+import '../auth_gate.dart';
 
 
 
@@ -16,11 +18,13 @@ import 'package:agriwatch/core/config/app_config.dart';
 class OTPScreen extends StatefulWidget {
   final String phoneNumber;
   final String verificationId;
+  final String mode;
 
   const OTPScreen({
     super.key,
     required this.phoneNumber,
     required this.verificationId,
+    this.mode = 'signIn',
   });
 
   
@@ -118,13 +122,32 @@ if (!AppConfig.useFirebaseOTP) {
     showSuccess = false;
   });
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text("Development Mode Login"),
-    ),
-  );
+  try {
+    await FirebaseAuth.instance.signInAnonymously();
 
-  // TODO: Navigate to Home Screen
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const AuthGate()),
+      (route) => false,
+    );
+  } on FirebaseAuthException catch (e) {
+    if (!mounted) return;
+
+    setState(() {
+      showError = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          e.message ?? 'Enable Anonymous sign-in in Firebase for development mode.',
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
   return;
 }
 
@@ -135,10 +158,29 @@ if (!AppConfig.useFirebaseOTP) {
 
 
   try {
-    await FirebaseAuthService.instance.verifyOTP(
+    final credential = await FirebaseAuthService.instance.verifyOTP(
       verificationId: widget.verificationId,
       smsCode: otp,
     );
+
+    final isNewUser = credential?.additionalUserInfo?.isNewUser ?? false;
+
+    if (widget.mode == 'signIn' && isNewUser) {
+      await FirebaseAuth.instance.currentUser?.delete();
+      await FirebaseAuth.instance.signOut();
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'No account found for this phone number. Please sign up first.',
+      );
+    }
+
+    if (widget.mode == 'signUp' && !isNewUser) {
+      await FirebaseAuth.instance.signOut();
+      throw FirebaseAuthException(
+        code: 'account-exists',
+        message: 'This phone account already exists. Please sign in instead.',
+      );
+    }
 
     if (!mounted) return;
 
@@ -155,11 +197,10 @@ if (!AppConfig.useFirebaseOTP) {
       showSuccess = false;
     });
 
-    // TODO: Navigate to Home Screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Phone verification successful!"),
-      ),
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const AuthGate()),
+      (route) => false,
     );
   } on FirebaseAuthException catch (e) {
     if (!mounted) return;
@@ -232,7 +273,7 @@ if (!AppConfig.useFirebaseOTP) {
     scrolledUnderElevation: 0,
     elevation: 0,
     leading: IconButton(
-      icon: const Icon(Icons.arrow_back_ios_new),
+      icon: const Icon(Iconsax.arrow_left),
       onPressed: () => Navigator.pop(context),
     ),
   ),
@@ -268,7 +309,7 @@ if (!AppConfig.useFirebaseOTP) {
                         Hero(
                           tag: "app_logo",
                           child: Image.asset(
-                            "assets/images/AgriWatch logo.png",
+                            "assets/images/Agriwatch logo.png",
                             width: 80,
                           ),
                         ),
@@ -364,7 +405,7 @@ if (!AppConfig.useFirebaseOTP) {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
-                  "assets/images/AgriWatch logo.png",
+                  "assets/images/Agriwatch logo.png",
                   width: 90,
                 ),
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
 
 import '../../core/services/local_storage_service.dart';
 import '../auth/screens/welcome_screen.dart';
@@ -35,28 +36,26 @@ class _LanguageScreenState extends State<LanguageScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
           child: Column(
             children: [
-              const Spacer(),
-
-              // AgriWatch Logo
               Image.asset(
-                "assets/images/AgriWatch logo.png",
-                width: 130,
-                height: 130,
+                "assets/images/Agriwatch logo.png",
+                width: 230,
+                height: 230,
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 30),
 
               const Text(
                 "Choose Your Language\nاپنی زبان منتخب کریں",
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 29,
                   fontWeight: FontWeight.bold,
-                  height: 1.35,
+                  height: 1.3,
+                  color: Color(0xFF17351D),
                 ),
               ),
 
@@ -67,17 +66,32 @@ class _LanguageScreenState extends State<LanguageScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
-                  color: Colors.grey.shade600,
+                  color: Colors.grey.shade700,
                   height: 1.5,
                 ),
               ),
 
-              const SizedBox(height: 50),
+              const SizedBox(height: 34),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Select one",
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
 
               _languageCard(
                 title: "English",
                 subtitle: "Continue in English",
                 languageCode: "en",
+                icon: Iconsax.language_square,
               ),
 
               const SizedBox(height: 18),
@@ -86,9 +100,10 @@ class _LanguageScreenState extends State<LanguageScreen> {
                 title: "اردو",
                 subtitle: "اردو میں جاری رکھیں",
                 languageCode: "ur",
+                icon: Iconsax.translate,
               ),
 
-              const Spacer(),
+              const SizedBox(height: 30),
 
               SizedBox(
                 width: double.infinity,
@@ -106,7 +121,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                     ),
                   ),
                   child: const Text(
-                    "Continue | جاری رکھیں",
+                    "Continue  |  جاری رکھیں",
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
@@ -127,6 +142,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
     required String title,
     required String subtitle,
     required String languageCode,
+    required IconData icon,
   }) {
     final selected = selectedLanguage == languageCode;
 
@@ -145,8 +161,8 @@ class _LanguageScreenState extends State<LanguageScreen> {
           vertical: 18,
         ),
         decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFFE8F5E9)
+            color: selected
+                      ? const Color(0xFFE8F5E9)
               : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
@@ -165,6 +181,23 @@ class _LanguageScreenState extends State<LanguageScreen> {
         ),
         child: Row(
           children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: selected
+                  ? const Color(0xFF2E7D32)
+                    : const Color(0xFFE8F5E9),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: selected ? Colors.white : const Color(0xFF2E7D32),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment:
@@ -194,7 +227,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
               duration: const Duration(milliseconds: 250),
               child: selected
                   ? const Icon(
-                      Icons.check_circle,
+                      Iconsax.tick_circle,
                       key: ValueKey("selected"),
                       color: Color(0xFF2E7D32),
                       size: 30,

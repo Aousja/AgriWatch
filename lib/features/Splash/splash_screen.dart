@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:video_player/video_player.dart';
 
-import '../auth//screens/welcome_screen.dart';
-import '../home/home_screen.dart';
-import '../language/language_screen.dart';
+import '../../core/config/app_config.dart';
 import '../../core/services/local_storage_service.dart';
+import '../auth/auth_gate.dart';
+import '../language/language_screen.dart';
+import '../auth/screens/welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,6 +18,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   late final VideoPlayerController _controller;
   bool _hasNavigated = false;
+  bool _readyToShow = false;
 
   @override
   void initState() {
@@ -30,16 +33,24 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initializeVideo() async {
     await _controller.initialize();
-
     await _controller.setLooping(false);
+    await _controller.seekTo(Duration.zero);
 
     if (!mounted) return;
 
-    setState(() {});
+    await _controller.play();
 
-    _controller.play();
-
+    _controller.addListener(_readyListener);
     _controller.addListener(_videoListener);
+  }
+
+  void _readyListener() {
+    if (!_readyToShow &&
+        _controller.value.isPlaying &&
+        _controller.value.position > Duration.zero) {
+      setState(() => _readyToShow = true);
+      _controller.removeListener(_readyListener);
+    }
   }
 
   void _videoListener() {
@@ -54,24 +65,18 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateNext() async {
+    if (!mounted) return;
 
-    final bool languageSelected =
-    LocalStorageService.isLanguageSelected();
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final Widget nextScreen;
 
-    final bool isLoggedIn =
-    LocalStorageService.isLoggedIn();
-
-    Widget nextScreen;
-
-    if (!languageSelected) {
-      nextScreen = const LanguageScreen();
-    } else if (!isLoggedIn) {
+    if (!AppConfig.forceLoginScreenOnStartup && currentUser != null) {
+      nextScreen = const AuthGate();
+    } else if (LocalStorageService.isLanguageSelected()) {
       nextScreen = const WelcomeScreen();
     } else {
-      nextScreen = const HomeScreen();
+      nextScreen = const LanguageScreen();
     }
-
-    if (!mounted) return;
 
     Navigator.pushReplacement(
       context,
@@ -83,6 +88,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void dispose() {
+    _controller.removeListener(_readyListener);
     _controller.removeListener(_videoListener);
     _controller.dispose();
     super.dispose();
@@ -93,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: _controller.value.isInitialized
+        child: _readyToShow
             ? AspectRatio(
                 aspectRatio: _controller.value.aspectRatio,
                 child: VideoPlayer(_controller),

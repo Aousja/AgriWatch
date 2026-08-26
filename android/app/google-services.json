@@ -12,7 +12,20 @@
           "package_name": "com.example.agriwatch"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "603632933825-gqclq77kt43b6np3f6880bfnfq04rdlv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.agriwatch",
+            "certificate_hash": "8004d6014a8b4b2228f9ccf175ef31238e9b724c"
+          }
+        },
+        {
+          "client_id": "603632933825-udoo3d07drsno0enflcoplm36u2h3775.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBLq7Yjtd6ShlCQixTfTS9fjprTZvjQs6Y"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "603632933825-udoo3d07drsno0enflcoplm36u2h3775.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "603632933825-l4hbceqlp64ib58rafvuv2ku3438pui0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.agriwatch"
+              }
+            }
+          ]
         }
       }
     }

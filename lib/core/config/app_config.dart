@@ -7,6 +7,10 @@ class AppConfig {
    /// Skip Firebase Phone OTP completely
   static const bool useFirebaseOTP = false;
 
+  /// During development, always start on the login screen even if a session exists.
+  /// Set this to false once the app is ready for production behavior.
+  static const bool forceLoginScreenOnStartup = true;
+
   // Backend
   static const bool useMockAPI = false;
 

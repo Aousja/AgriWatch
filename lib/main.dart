@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'firebase_options.dart';
 
@@ -13,10 +14,9 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  await LocalStorageService.init();
+  await GoogleSignIn.instance.initialize();
 
-  // TEMPORARY: Reset app state every launch for testing remove it after development and testing
-  await LocalStorageService.clearAll();
+  await LocalStorageService.init();
 
   runApp(const AgriWatchApp());
 }

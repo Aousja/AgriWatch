@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class FirebaseAuthService {
   FirebaseAuthService._();
@@ -7,13 +7,15 @@ class FirebaseAuthService {
   static final FirebaseAuthService instance = FirebaseAuthService._();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   /// Send OTP
   Future<void> sendOTP({
     required String phoneNumber,
     required Function(String verificationId) codeSent,
     required Function(String error) onError,
-    required VoidCallback onVerificationCompleted,
+    required Future<void> Function(UserCredential credential)
+      onVerificationCompleted,
   }) async {
     try {
       await _auth.verifyPhoneNumber(
@@ -23,8 +25,8 @@ class FirebaseAuthService {
 
         verificationCompleted: (PhoneAuthCredential credential) async {
           try {
-            await _auth.signInWithCredential(credential);
-            onVerificationCompleted();
+            final userCredential = await _auth.signInWithCredential(credential);
+            await onVerificationCompleted(userCredential);
           } catch (e) {
             onError(e.toString());
           }
@@ -67,8 +69,100 @@ class FirebaseAuthService {
     }
   }
 
+  /// Sign in with Google
+  Future<UserCredential?> signInWithGoogle() async {
+    try {
+      final googleUser = await _googleSignIn.authenticate();
+      final googleAuth = googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+
+      return await _auth.signInWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      final code = e.code.toLowerCase();
+      if (code.contains('cancel') || code.contains('aborted')) {
+        return null;
+      }
+      rethrow;
+    } catch (e) {
+      final message = e.toString().toLowerCase();
+      if (message.contains('cancel') || message.contains('aborted')) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  Future<AuthCredential?> getGoogleCredential() async {
+    try {
+      final googleUser = await _googleSignIn.authenticate();
+      final googleAuth = googleUser.authentication;
+      return GoogleAuthProvider.credential(idToken: googleAuth.idToken);
+    } on FirebaseAuthException catch (e) {
+      if (e.code.contains('cancel') || e.code.contains('aborted')) return null;
+      rethrow;
+    }
+  }
+
+  AuthCredential emailCredential({
+    required String email,
+    required String password,
+  }) {
+    return EmailAuthProvider.credential(
+      email: email.trim(),
+      password: password.trim(),
+    );
+  }
+
+  Future<UserCredential> linkCredential(AuthCredential credential) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'Please sign in before linking another method.',
+      );
+    }
+    return user.linkWithCredential(credential);
+  }
+
+  /// Sign in with email and password
+  Future<UserCredential?> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      return await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password.trim(),
+      );
+    } on FirebaseAuthException {
+      rethrow;
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  /// Create email account if needed
+  Future<UserCredential?> createUserWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      return await _auth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password.trim(),
+      );
+    } on FirebaseAuthException {
+      rethrow;
+    } catch (_) {
+      rethrow;
+    }
+  }
+
   /// Logout
   Future<void> signOut() async {
+    await _googleSignIn.signOut();
     await _auth.signOut();
   }
 
