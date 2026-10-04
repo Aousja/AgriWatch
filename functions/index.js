@@ -2,7 +2,9 @@
 
 const { initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
+const { onRequest } = require('firebase-functions/v2/https');
 const { onUserCreated } = require('firebase-functions/v2/identity');
+const { handleReviewRequest } = require('./approve-access-request');
 
 initializeApp();
 
@@ -23,3 +25,9 @@ exports.setAuthenticatedRoleOnUserCreated = onUserCreated(async (event) => {
     role: 'authenticated',
   });
 });
+
+/**
+ * Approves or rejects a shared access request after validating the Supabase
+ * web-admin session. The browser supplies only requestId and action.
+ */
+exports.reviewAccessRequest = onRequest({ cors: true }, handleReviewRequest);

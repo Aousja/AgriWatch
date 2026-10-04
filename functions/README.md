@@ -57,3 +57,26 @@ refresh so the asynchronously assigned `role` claim can be used by Supabase.
 The Supabase dashboard still needs a Third-party Auth integration registered
 for Firebase project ID `agriwatch-pakistan`. No shared Supabase tables,
 schemas, policies, or data are changed by this bridge foundation.
+
+## Access-request review endpoint
+
+`reviewAccessRequest` is a server-only endpoint for Afaq's web dashboard. The
+browser sends only a request UUID and `approve`/`reject` action with its
+Supabase Auth bearer token. The function verifies that token and the
+Supabase `user_profiles.role = 'admin'` before loading the request itself.
+
+It never trusts a browser-supplied Firebase UID or requested role. Approval
+maps `officer` to `pdma_officer` and `ngo` to `ngo`, preserves existing
+Firebase custom claims, keeps Firebase's reserved `role: 'authenticated'`,
+updates the server-managed mobile profile, and changes the request status only
+through the trusted workflow. Partial failures are compensated back to a
+pending request; unrecoverable compensation is marked `recovery_required`.
+
+The deployed function requires these server-only values:
+
+* `SUPABASE_URL`
+* `SUPABASE_SERVICE_ROLE_KEY`
+
+Never put either value in Flutter or the web bundle. The approval-run table
+and the profile role/access-granted migration must be applied before enabling
+the endpoint.

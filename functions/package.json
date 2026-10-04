@@ -8,7 +8,8 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "backfill:authenticated-role": "node scripts/backfill-authenticated-role.js"
+    "backfill:authenticated-role": "node scripts/backfill-authenticated-role.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "firebase-admin": "^13.6.0",
