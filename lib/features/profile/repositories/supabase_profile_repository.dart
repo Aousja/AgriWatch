@@ -5,7 +5,7 @@ import '../models/user_profile.dart';
 
 const _profileColumns =
     'firebase_uid, name, phone_number, email, photo_url, role, district, '
-    'created_at, updated_at';
+    'access_granted, created_at, updated_at';
 
 /// Maps the existing Flutter profile model to the new, Firebase-UID keyed
 /// Supabase table without changing the Firestore representation.
@@ -59,6 +59,7 @@ class SupabaseProfileMapper {
       'photoUrl': row['photo_url'],
       'role': row['role'],
       'district': row['district'],
+      'accessGranted': row['access_granted'] == true,
       'createdAt': row['created_at'],
       'updatedAt': row['updated_at'],
     });

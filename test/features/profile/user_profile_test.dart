@@ -35,6 +35,13 @@ void main() {
       });
 
       expect(profile.role, 'citizen');
+
+      final ngoProfile = UserProfileService.profileForCreation(
+        UserProfile(uid: 'user-ngo-1', role: 'ngo'),
+        now: updatedAt,
+      );
+
+      expect(ngoProfile.role, 'citizen');
     });
   });
 

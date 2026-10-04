@@ -36,6 +36,12 @@ void main() {
       )['role'],
       'citizen',
     );
+    expect(
+      SupabaseProfileMapper.toInsert(
+        UserProfile(uid: 'firebase-ngo-1', role: 'ngo'),
+      )['role'],
+      'citizen',
+    );
   });
 
   test('maps only permitted profile fields for updates', () {
@@ -70,13 +76,27 @@ void main() {
       'photo_url': null,
       'role': 'pdma_officer',
       'district': 'Peshawar',
+      'access_granted': true,
       'created_at': '2026-10-04T10:00:00.000Z',
       'updated_at': '2026-10-04T10:05:00.000Z',
     });
 
     expect(profile.uid, 'firebase-admin-1');
     expect(profile.role, 'pdma_officer');
+    expect(profile.accessGranted, isTrue);
     expect(profile.createdAt, DateTime.parse('2026-10-04T10:00:00.000Z'));
     expect(profile.updatedAt, DateTime.parse('2026-10-04T10:05:00.000Z'));
+  });
+
+  test('preserves the NGO role only when reading a server-managed row', () {
+    final profile = SupabaseProfileMapper.fromRow({
+      'firebase_uid': 'firebase-ngo-1',
+      'name': 'NGO Coordinator',
+      'role': 'ngo',
+      'access_granted': true,
+    });
+
+    expect(profile.role, 'ngo');
+    expect(profile.accessGranted, isTrue);
   });
 }

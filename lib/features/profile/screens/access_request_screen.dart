@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/supabase_bridge.dart';
 import '../../../core/services/local_storage_service.dart';
 import '../repositories/supabase_access_request_repository.dart';
 import '../services/access_request_service.dart';
@@ -59,6 +60,7 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
   bool _loading = true;
   bool _submitting = false;
   AccessRequestStatus _requestStatus = AccessRequestStatus.none;
+  String? _approvedApplicationRole;
 
   static const _provinces = [
     'Punjab',
@@ -262,9 +264,14 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
     try {
       final latestRequest = await _service.latestRequest(uid);
       final status = AccessRequestStatus.fromRow(latestRequest);
+      String? approvedApplicationRole;
+      if (status == AccessRequestStatus.approved) {
+        approvedApplicationRole = await SupabaseBridge.refreshApplicationRole();
+      }
       if (mounted) {
         setState(() {
           _requestStatus = status;
+          _approvedApplicationRole = approvedApplicationRole;
           _loading = false;
         });
       }
@@ -461,7 +468,11 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
                       icon: Iconsax.verify,
                       title: 'Request approved',
                       message:
-                          'Your request was approved. Your account permissions will appear after the server updates your access.',
+                          _approvedApplicationRole == 'ngo'
+                              ? 'Your NGO access is approved and the refreshed application role is NGO.'
+                              : _approvedApplicationRole == 'pdma_officer'
+                                  ? 'Your PDMA Officer access is approved and the refreshed application role is PDMA Officer.'
+                                  : 'Your request was approved. Refresh your session again to load the trusted application role.',
                       color: green,
                     )
                   : _requestStatus == AccessRequestStatus.unknown

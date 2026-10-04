@@ -8,6 +8,7 @@ class UserProfile {
   final String? photoUrl;
   final String? role;
   final String? district;
+  final bool accessGranted;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -19,6 +20,7 @@ class UserProfile {
     this.photoUrl,
     this.role = 'citizen',
     this.district,
+    this.accessGranted = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -40,6 +42,7 @@ class UserProfile {
   static String _roleFromValue(Object? value) => switch (value) {
     'farmer' => 'farmer',
     'pdma_officer' => 'pdma_officer',
+    'ngo' => 'ngo',
     'admin' => 'admin',
     _ => 'citizen',
   };
@@ -60,6 +63,7 @@ class UserProfile {
       photoUrl: map['photoUrl'],
       role: _roleFromValue(map['role']),
       district: map['district'],
+      accessGranted: map['accessGranted'] == true,
       createdAt: _dateFromValue(map['createdAt']),
       updatedAt: _dateFromValue(map['updatedAt']),
     );

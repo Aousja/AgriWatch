@@ -54,6 +54,20 @@ class SupabaseBridge {
     );
   }
 
+  /// Refreshes the Firebase application-role claim after a trusted approval.
+  /// The reserved Firebase/Supabase bridge claim remains `authenticated`.
+  static Future<String?> refreshApplicationRole() async {
+    if (!SupabaseConfig.isConfigured) return null;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+
+    final tokenResult = await user.getIdTokenResult(true);
+    final role = tokenResult.claims?['agriwatch_role'];
+    if (role == 'pdma_officer' || role == 'ngo') return role as String;
+    return null;
+  }
+
   /// Inserts and reads one row from the isolated bridge verification table.
   /// This is intentionally separate from all production application tables.
   static Future<Map<String, dynamic>> verifyIsolatedRoundTrip() async {
