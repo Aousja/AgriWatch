@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../../core/services/supabase_bridge.dart';
+
 class FirebaseAuthService {
   FirebaseAuthService._();
 
@@ -26,6 +28,7 @@ class FirebaseAuthService {
         verificationCompleted: (PhoneAuthCredential credential) async {
           try {
             final userCredential = await _auth.signInWithCredential(credential);
+            await SupabaseBridge.refreshTokenAfterClaimAssignment();
             await onVerificationCompleted(userCredential);
           } catch (e) {
             onError(e.toString());
@@ -61,7 +64,9 @@ class FirebaseAuthService {
         smsCode: smsCode,
       );
 
-      return await _auth.signInWithCredential(credential);
+      final userCredential = await _auth.signInWithCredential(credential);
+      await SupabaseBridge.refreshTokenAfterClaimAssignment();
+      return userCredential;
     } on FirebaseAuthException {
       rethrow;
     } catch (_) {
@@ -78,7 +83,9 @@ class FirebaseAuthService {
         idToken: googleAuth.idToken,
       );
 
-      return await _auth.signInWithCredential(credential);
+      final userCredential = await _auth.signInWithCredential(credential);
+      await SupabaseBridge.refreshTokenAfterClaimAssignment();
+      return userCredential;
     } on FirebaseAuthException catch (e) {
       final code = e.code.toLowerCase();
       if (code.contains('cancel') || code.contains('aborted')) {
@@ -132,10 +139,12 @@ class FirebaseAuthService {
     required String password,
   }) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
       );
+      await SupabaseBridge.refreshTokenAfterClaimAssignment();
+      return userCredential;
     } on FirebaseAuthException {
       rethrow;
     } catch (_) {
@@ -149,10 +158,12 @@ class FirebaseAuthService {
     required String password,
   }) async {
     try {
-      return await _auth.createUserWithEmailAndPassword(
+      final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
       );
+      await SupabaseBridge.refreshTokenAfterClaimAssignment();
+      return userCredential;
     } on FirebaseAuthException {
       rethrow;
     } catch (_) {

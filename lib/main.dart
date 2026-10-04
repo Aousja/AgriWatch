@@ -5,6 +5,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'firebase_options.dart';
 
 import 'core/services/local_storage_service.dart';
+import 'core/services/supabase_bridge.dart';
+import 'core/design/app_design.dart';
 import 'features/splash/splash_screen.dart';
 
 Future<void> main() async {
@@ -13,6 +15,8 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await SupabaseBridge.initialize();
 
   await GoogleSignIn.instance.initialize();
 
@@ -29,9 +33,9 @@ class AgriWatchApp extends StatelessWidget {
     return MaterialApp(
       title: 'AgriWatch',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-      ),
+      theme: AppDesign.theme(),
+      locale: Locale(LocalStorageService.getLanguage()),
+      supportedLocales: const [Locale('en'), Locale('ur')],
       home: const SplashScreen(),
     );
   }

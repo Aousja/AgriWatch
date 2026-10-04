@@ -30,12 +30,19 @@ class UserProfile {
       'phoneNumber': phoneNumber,
       'email': email,
       'photoUrl': photoUrl,
-      'role': role == 'citizen' ? role : 'citizen',
+      'role': _roleFromValue(role),
       'district': district,
       'createdAt': createdAt == null ? null : Timestamp.fromDate(createdAt!),
       'updatedAt': updatedAt == null ? null : Timestamp.fromDate(updatedAt!),
     };
   }
+
+  static String _roleFromValue(Object? value) => switch (value) {
+    'farmer' => 'farmer',
+    'pdma_officer' => 'pdma_officer',
+    'admin' => 'admin',
+    _ => 'citizen',
+  };
 
   static DateTime? _dateFromValue(dynamic value) {
     if (value is Timestamp) return value.toDate();
@@ -51,12 +58,10 @@ class UserProfile {
       phoneNumber: map['phoneNumber'] ?? map['phone'],
       email: map['email'],
       photoUrl: map['photoUrl'],
-        role: map['role'] == 'pdma_officer' || map['role'] == 'admin'
-          ? 'citizen'
-          : (map['role'] ?? 'citizen'),
+      role: _roleFromValue(map['role']),
       district: map['district'],
-        createdAt: _dateFromValue(map['createdAt']),
-        updatedAt: _dateFromValue(map['updatedAt']),
+      createdAt: _dateFromValue(map['createdAt']),
+      updatedAt: _dateFromValue(map['updatedAt']),
     );
   }
 }
