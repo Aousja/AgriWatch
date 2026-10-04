@@ -31,6 +31,19 @@ class AccessRequestService {
     return snapshot.docs.isNotEmpty;
   }
 
+  Future<Map<String, dynamic>?> latestRequest(String uid) async {
+    if (SupabaseConfig.useSupabaseAccessRequests) {
+      return _newSupabaseRepository.latestOwnRequest(uid);
+    }
+
+    final snapshot = await _requests
+        .where('uid', isEqualTo: uid)
+        .orderBy('submittedAt', descending: true)
+        .limit(1)
+        .get();
+    return snapshot.docs.isEmpty ? null : snapshot.docs.first.data();
+  }
+
   Future<void> submitRequest({
     required String uid,
     required String requestedRole,

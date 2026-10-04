@@ -27,6 +27,29 @@ operational_district
 
 /// Converts the existing Firestore form contract to the proposed shared
 /// access_requests columns. Status and submitted_at are server-controlled.
+enum AccessRequestStatus {
+  none,
+  pending,
+  approved,
+  rejected,
+  unknown;
+
+  static AccessRequestStatus fromRow(Map<String, dynamic>? row) {
+    if (row == null) return AccessRequestStatus.none;
+    return fromValue(row['status']);
+  }
+
+  static AccessRequestStatus fromValue(Object? value) {
+    return switch (value?.toString().trim().toLowerCase()) {
+      'pending' => AccessRequestStatus.pending,
+      'approved' => AccessRequestStatus.approved,
+      'rejected' => AccessRequestStatus.rejected,
+      null || '' => AccessRequestStatus.none,
+      _ => AccessRequestStatus.unknown,
+    };
+  }
+}
+
 class SupabaseAccessRequestMapper {
   SupabaseAccessRequestMapper._();
 
@@ -117,6 +140,33 @@ class SupabaseAccessRequestRepository {
   Future<bool> hasPendingRequest(String uid) async {
     final rows = await listOwnRequests(uid, status: 'pending');
     return rows.isNotEmpty;
+  }
+
+  Future<Map<String, dynamic>?> latestOwnRequest(String uid) async {
+    final currentUid = _requireCurrentUid(uid);
+    late final List<Map<String, dynamic>> rows;
+    try {
+      rows = await _client
+          .from(_table)
+          .select(_accessRequestColumns)
+          .eq('firebase_uid', currentUid)
+          .order('submitted_at', ascending: false)
+          .limit(1);
+    } on PostgrestException catch (error) {
+      if (kDebugMode) {
+        debugPrint(
+          '[SupabaseAccessRequest] latest own SELECT failed: '
+          'code=${error.code}; message=${error.message}; '
+          'details=${error.details}; hint=${error.hint}; '
+          'query=public.access_requests SELECT '
+          '(${_accessRequestColumns.replaceAll(RegExp(r'\s+'), ' ').trim()}) '
+          'WHERE firebase_uid=<current-firebase-uid> '
+          'ORDER BY submitted_at DESC LIMIT 1',
+        );
+      }
+      rethrow;
+    }
+    return rows.isEmpty ? null : rows.first;
   }
 
   Future<List<Map<String, dynamic>>> listOwnRequests(

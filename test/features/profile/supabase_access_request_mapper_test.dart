@@ -4,6 +4,36 @@ import 'package:agriwatch/core/config/supabase_config.dart';
 import 'package:agriwatch/features/profile/repositories/supabase_access_request_repository.dart';
 
 void main() {
+  group('access request status mapping', () {
+    test('maps each server status distinctly', () {
+      expect(
+        AccessRequestStatus.fromValue('pending'),
+        AccessRequestStatus.pending,
+      );
+      expect(
+        AccessRequestStatus.fromValue('approved'),
+        AccessRequestStatus.approved,
+      );
+      expect(
+        AccessRequestStatus.fromValue('rejected'),
+        AccessRequestStatus.rejected,
+      );
+    });
+
+    test('maps missing and unexpected statuses safely', () {
+      expect(AccessRequestStatus.fromRow(null), AccessRequestStatus.none);
+      expect(AccessRequestStatus.fromRow(const {}), AccessRequestStatus.none);
+      expect(
+        AccessRequestStatus.fromValue('in_review'),
+        AccessRequestStatus.unknown,
+      );
+      expect(
+        AccessRequestStatus.fromValue(' APPROVED '),
+        AccessRequestStatus.approved,
+      );
+    });
+  });
+
   test('maps the officer form to shared access-request columns', () {
     expect(
       SupabaseAccessRequestMapper.toInsert(

@@ -6,6 +6,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/local_storage_service.dart';
+import '../repositories/supabase_access_request_repository.dart';
 import '../services/access_request_service.dart';
 
 class _CnicFormatter extends TextInputFormatter {
@@ -57,7 +58,7 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
   String? _operationalDistrict;
   bool _loading = true;
   bool _submitting = false;
-  bool _pending = false;
+  AccessRequestStatus _requestStatus = AccessRequestStatus.none;
 
   static const _provinces = [
     'Punjab',
@@ -259,8 +260,14 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
     }
 
     try {
-      final pending = await _service.hasPendingRequest(uid);
-      if (mounted) setState(() { _pending = pending; _loading = false; });
+      final latestRequest = await _service.latestRequest(uid);
+      final status = AccessRequestStatus.fromRow(latestRequest);
+      if (mounted) {
+        setState(() {
+          _requestStatus = status;
+          _loading = false;
+        });
+      }
     } catch (error) {
       if (kDebugMode) {
         if (error is PostgrestException) {
@@ -276,7 +283,12 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
           );
         }
       }
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _requestStatus = AccessRequestStatus.unknown;
+          _loading = false;
+        });
+      }
       _showMessage('Unable to check request status. Please try again.', true);
     }
   }
@@ -341,7 +353,12 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
                 'officialEmail': ngoValues[2],
               },
       );
-      if (mounted) setState(() { _pending = true; _submitting = false; });
+      if (mounted) {
+        setState(() {
+          _requestStatus = AccessRequestStatus.pending;
+          _submitting = false;
+        });
+      }
       if (mounted) _showMessage('Your request was submitted and is under review.', false);
     } catch (_) {
       if (mounted) setState(() => _submitting = false);
@@ -409,7 +426,7 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: green))
-          : _pending
+          : _requestStatus == AccessRequestStatus.pending
               ? Center(
                   child: Container(
                     margin: const EdgeInsets.all(24),
@@ -439,10 +456,56 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
                     ),
                   ),
                 )
+              : _requestStatus == AccessRequestStatus.approved
+                  ? _statusCard(
+                      icon: Iconsax.verify,
+                      title: 'Request approved',
+                      message:
+                          'Your request was approved. Your account permissions will appear after the server updates your access.',
+                      color: green,
+                    )
+                  : _requestStatus == AccessRequestStatus.unknown
+                      ? _statusCard(
+                          icon: Iconsax.warning_2,
+                          title: 'Request status unavailable',
+                          message:
+                              'The latest request has an unknown status. Please try again later.',
+                          color: Colors.orange,
+                        )
               : SingleChildScrollView(
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(20, 22, 20, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    if (_requestStatus == AccessRequestStatus.rejected) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF4F4),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFF0CACA)),
+                        ),
+                        child: const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Request rejected',
+                              style: TextStyle(
+                                color: Color(0xFFB42318),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Your previous request was rejected. You may submit a new request with updated information.',
+                              style: TextStyle(color: Colors.black54, height: 1.4),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                    ],
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(22),
@@ -529,6 +592,43 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
                     ),
                   ]),
                 ),
+    );
+  }
+
+  Widget _statusCard({
+    required IconData icon,
+    required String title,
+    required String message,
+    required Color color,
+  }) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFDCE9DF)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 48, color: color),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.black54, height: 1.4),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
