@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/local_storage_service.dart';
 import '../services/access_request_service.dart';
@@ -259,7 +261,21 @@ class _AccessRequestScreenState extends State<AccessRequestScreen> {
     try {
       final pending = await _service.hasPendingRequest(uid);
       if (mounted) setState(() { _pending = pending; _loading = false; });
-    } catch (_) {
+    } catch (error) {
+      if (kDebugMode) {
+        if (error is PostgrestException) {
+          debugPrint(
+            '[AccessRequestScreen] status check failed: '
+            'code=${error.code}; message=${error.message}; '
+            'details=${error.details}; hint=${error.hint}',
+          );
+        } else {
+          debugPrint(
+            '[AccessRequestScreen] status check failed: '
+            '${error.runtimeType}: $error',
+          );
+        }
+      }
       if (mounted) setState(() => _loading = false);
       _showMessage('Unable to check request status. Please try again.', true);
     }

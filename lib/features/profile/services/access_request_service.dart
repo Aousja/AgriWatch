@@ -1,12 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../core/config/supabase_config.dart';
+import '../repositories/supabase_access_request_repository.dart';
+
 class AccessRequestService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  AccessRequestService({
+    FirebaseFirestore? firestore,
+    this._supabaseRepository,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseFirestore _firestore;
+  SupabaseAccessRequestRepository? _supabaseRepository;
+
+  SupabaseAccessRequestRepository get _newSupabaseRepository =>
+      _supabaseRepository ??= SupabaseAccessRequestRepository();
 
   CollectionReference<Map<String, dynamic>> get _requests =>
       _firestore.collection('access_requests');
 
   Future<bool> hasPendingRequest(String uid) async {
+    if (SupabaseConfig.useSupabaseAccessRequests) {
+      return _newSupabaseRepository.hasPendingRequest(uid);
+    }
+
     final snapshot = await _requests
         .where('uid', isEqualTo: uid)
         .where('status', isEqualTo: 'pending')
@@ -25,6 +41,20 @@ class AccessRequestService {
     required String reason,
     Map<String, dynamic> additionalFields = const {},
   }) async {
+    if (SupabaseConfig.useSupabaseAccessRequests) {
+      await _newSupabaseRepository.submitRequest(
+        uid: uid,
+        requestedRole: requestedRole,
+        fullName: fullName,
+        organizationName: organizationName,
+        designation: designation,
+        phone: phone,
+        reason: reason,
+        additionalFields: additionalFields,
+      );
+      return;
+    }
+
     await _requests.add({
       'uid': uid,
       'requestedRole': requestedRole,
