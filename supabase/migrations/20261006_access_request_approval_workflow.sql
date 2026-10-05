@@ -1,10 +1,10 @@
 -- Trusted officer/NGO approval workflow for Firebase-backed mobile users.
--- Do not run on the shared project until the server endpoint and dashboard
--- changes have been reviewed and deployed together.
+-- Apply only after the replacement dashboard and review endpoint are deployed
+-- and ready. This migration removes the old browser status-update path.
 
 begin;
 
--- All assumptions are checked before any mutation.
+-- Check the required schema and policy shape before changing objects.
 do $$
 declare
   access_requests_oid oid;
@@ -62,6 +62,14 @@ begin
       and polroles = array[0::oid]
   ) then
     raise exception 'Expected PUBLIC UPDATE policy was not found.';
+  end if;
+
+  if to_regprocedure('public.is_agriwatch_admin(uuid)') is null then
+    raise exception 'Required existing admin membership function was not found.';
+  end if;
+
+  if to_regprocedure('public.agriwatch_review_web_admin_v1(uuid)') is not null then
+    raise exception 'Review admin RPC already exists; inspect before applying.';
   end if;
 
   select rel.oid
@@ -174,14 +182,60 @@ alter table public.access_request_approval_runs enable row level security;
 
 revoke all on table public.access_request_approval_runs
   from public, anon, authenticated;
+grant select, insert, update on table public.access_request_approval_runs
+  to service_role;
 revoke all on function public.agriwatch_access_request_approval_runs_updated_at_v1()
   from public, anon, authenticated;
+
+-- The endpoint calls the same admins-membership rule as the existing web
+-- policies. Only the service role may invoke this RPC.
+create function public.agriwatch_review_web_admin_v1(candidate_uid uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = pg_catalog, public
+as $function$
+  select coalesce(public.is_agriwatch_admin(candidate_uid), false);
+$function$;
+
+revoke all on function public.agriwatch_review_web_admin_v1(uuid)
+  from public, anon, authenticated;
+grant execute on function public.agriwatch_review_web_admin_v1(uuid)
+  to service_role;
 
 -- Browser users retain SELECT for dashboard reads and Firebase own-row reads,
 -- but cannot directly change status. The trusted server uses service-role
 -- access after validating the Supabase web-admin session.
 revoke update on table public.access_requests
   from public, anon, authenticated;
+revoke update (status) on table public.access_requests
+  from public, anon, authenticated;
 grant select on table public.access_requests to authenticated;
+grant select on table public.access_requests to service_role;
+grant update (status) on table public.access_requests to service_role;
+grant select, insert, update, delete on table public.mobile_firebase_profiles
+  to service_role;
+
+-- Check effective privileges, including grants inherited through other roles.
+-- Abort the transaction if either browser role can still change status.
+do $$
+begin
+  if has_function_privilege('anon', 'public.agriwatch_review_web_admin_v1(uuid)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.agriwatch_review_web_admin_v1(uuid)', 'EXECUTE')
+     or not has_function_privilege('service_role', 'public.agriwatch_review_web_admin_v1(uuid)', 'EXECUTE') then
+    raise exception 'Review admin RPC must be executable only by the service role.';
+  end if;
+
+  if has_column_privilege('anon', 'public.access_requests', 'status', 'UPDATE')
+     or has_column_privilege('authenticated', 'public.access_requests', 'status', 'UPDATE') then
+    raise exception 'Browser role still has UPDATE privilege on access_requests.status.';
+  end if;
+
+  if not has_column_privilege('service_role', 'public.access_requests', 'status', 'UPDATE') then
+    raise exception 'Service role cannot update access_requests.status.';
+  end if;
+end;
+$$;
 
 commit;

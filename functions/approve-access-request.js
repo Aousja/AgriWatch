@@ -1,10 +1,14 @@
 'use strict';
 
 const { getAuth } = require('firebase-admin/auth');
+const { defineSecret } = require('firebase-functions/params');
 const {
   ApprovalWorkflowError,
   reviewAccessRequest,
+  verifyWebAdmin,
 } = require('./access-request-approval');
+
+const supabaseServiceRoleKey = defineSecret('SUPABASE_SERVICE_ROLE_KEY');
 
 function requiredEnvironment(name) {
   const value = process.env[name];
@@ -13,8 +17,8 @@ function requiredEnvironment(name) {
 }
 
 function serviceHeaders() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) throw new Error('Missing required server environment variable SUPABASE_SERVICE_ROLE_KEY.');
+  const key = supabaseServiceRoleKey.value();
+  if (!key) throw new Error('Missing Firebase Functions secret SUPABASE_SERVICE_ROLE_KEY.');
   return {
     apikey: key,
     Authorization: `Bearer ${key}`,
@@ -42,21 +46,6 @@ async function supabaseRequest(path, options = {}) {
 
 function encode(value) {
   return encodeURIComponent(value);
-}
-
-async function verifyWebAdmin(accessToken) {
-  const user = await supabaseRequest('/auth/v1/user', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!user?.id) throw new ApprovalWorkflowError('Invalid Supabase session.', 'unauthorized', 401);
-
-  const profiles = await supabaseRequest(
-    `/rest/v1/user_profiles?id=eq.${encode(user.id)}&select=id,role&limit=1`,
-  );
-  if (!Array.isArray(profiles) || profiles[0]?.role !== 'admin') {
-    throw new ApprovalWorkflowError('Supabase admin authorization required.', 'forbidden', 403);
-  }
-  return user.id;
 }
 
 function createStore() {
@@ -204,7 +193,7 @@ async function handleReviewRequest(req, res) {
       return;
     }
 
-    const adminUid = await verifyWebAdmin(accessToken);
+    const adminUid = await verifyWebAdmin(accessToken, supabaseRequest);
     const result = await reviewAccessRequest({
       action,
       requestId,
@@ -222,4 +211,4 @@ async function handleReviewRequest(req, res) {
   }
 }
 
-module.exports = { handleReviewRequest, verifyWebAdmin };
+module.exports = { handleReviewRequest, supabaseServiceRoleKey };

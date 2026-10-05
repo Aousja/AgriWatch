@@ -24,6 +24,22 @@ function roleMapping(requestedRole) {
   return APPLICATION_ROLES[String(requestedRole || '').trim().toLowerCase()];
 }
 
+async function verifyWebAdmin(accessToken, request) {
+  const user = await request('/auth/v1/user', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!user?.id) throw new ApprovalWorkflowError('Invalid Supabase session.', 'unauthorized', 401);
+
+  const isAdmin = await request('/rest/v1/rpc/agriwatch_review_web_admin_v1', {
+    method: 'POST',
+    body: JSON.stringify({ candidate_uid: user.id }),
+  });
+  if (isAdmin !== true) {
+    throw new ApprovalWorkflowError('Supabase admin authorization required.', 'forbidden', 403);
+  }
+  return user.id;
+}
+
 function requirePendingRequest(request, action) {
   if (!request) {
     throw new ApprovalWorkflowError('Access request was not found.', 'not_found', 404);
@@ -236,4 +252,5 @@ module.exports = {
   ApprovalWorkflowError,
   reviewAccessRequest,
   roleMapping,
+  verifyWebAdmin,
 };
