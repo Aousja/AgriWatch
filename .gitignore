@@ -32,6 +32,21 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/.local/
+/.m08-web-stage/
+/.m08-web-backup/
+/.m08-correction-before/
+
+# Firebase Cloud Functions dependencies and local npm cache
+functions/node_modules/
+functions/.npm-cache/
+functions/.env*
+!functions/.env.example
+
+# Local build output and temporary review artifacts
+/android/build/
+/.tmp-clean-head/
+/reviewAccessRequest-cloud-shell.zip
 
 # Symbolication related
 app.*.symbols

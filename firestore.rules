@@ -2,6 +2,12 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isStaff() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/user_profiles/$(request.auth.uid)).data.role
+          in ['pdma_officer', 'admin'];
+    }
+
     match /user_profiles/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null
@@ -9,17 +15,164 @@ service cloud.firestore {
         && request.resource.data.role in ['farmer', 'citizen'];
       allow update: if request.auth != null
         && request.auth.uid == userId
-        && request.resource.data.role in ['farmer', 'citizen'];
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.role in [
+          'farmer',
+          'citizen',
+          'pdma_officer',
+          'admin'
+        ];
       allow delete: if false;
     }
 
     match /access_requests/{requestId} {
       allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'requestedRole',
+          'fullName',
+          'organizationName',
+          'designation',
+          'phone',
+          'reason',
+          'status',
+          'submittedAt',
+          'cnic',
+          'province',
+          'district',
+          'department',
+          'employeeId',
+          'officialEmail',
+          'organizationType',
+          'registrationNumber',
+          'operationalProvince',
+          'operationalDistrict'
+        ])
+        && request.resource.data.keys().hasAll([
+          'uid',
+          'requestedRole',
+          'fullName',
+          'organizationName',
+          'designation',
+          'phone',
+          'reason',
+          'status',
+          'submittedAt'
+        ])
         && request.resource.data.uid == request.auth.uid
+        && request.resource.data.uid is string
         && request.resource.data.requestedRole in ['officer', 'ngo']
-        && request.resource.data.status == 'pending';
+        && request.resource.data.fullName is string
+        && request.resource.data.organizationName is string
+        && request.resource.data.designation is string
+        && request.resource.data.phone is string
+        && request.resource.data.reason is string
+        && request.resource.data.status == 'pending'
+        && request.resource.data.submittedAt is timestamp
+        && (
+          (
+            request.resource.data.requestedRole == 'officer'
+            && request.resource.data.keys().hasAll([
+              'cnic',
+              'province',
+              'district',
+              'department',
+              'employeeId',
+              'officialEmail'
+            ])
+            && !request.resource.data.keys().hasAny([
+              'organizationType',
+              'registrationNumber',
+              'operationalProvince',
+              'operationalDistrict'
+            ])
+            && request.resource.data.cnic is string
+            && request.resource.data.province is string
+            && request.resource.data.district is string
+            && request.resource.data.department is string
+            && request.resource.data.employeeId is string
+            && request.resource.data.officialEmail is string
+          )
+          ||
+          (
+            request.resource.data.requestedRole == 'ngo'
+            && request.resource.data.keys().hasAll([
+              'organizationType',
+              'registrationNumber',
+              'operationalProvince',
+              'operationalDistrict',
+              'officialEmail'
+            ])
+            && !request.resource.data.keys().hasAny([
+              'cnic',
+              'province',
+              'district',
+              'department',
+              'employeeId'
+            ])
+            && request.resource.data.organizationType is string
+            && request.resource.data.registrationNumber is string
+            && request.resource.data.operationalProvince is string
+            && request.resource.data.operationalDistrict is string
+            && request.resource.data.officialEmail is string
+          )
+        );
       allow read: if request.auth != null
-        && resource.data.uid == request.auth.uid;
+        && (resource.data.uid == request.auth.uid || isStaff());
+      allow update: if isStaff()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'reviewedAt',
+          'reviewedBy',
+          'rejectionReason'
+        ])
+        && request.resource.data.status in ['pending', 'approved', 'rejected']
+        && (
+          !request.resource.data.keys().hasAny(['reviewedAt'])
+          || request.resource.data.reviewedAt == null
+          || request.resource.data.reviewedAt is timestamp
+        )
+        && (
+          !request.resource.data.keys().hasAny(['reviewedBy'])
+          || request.resource.data.reviewedBy == null
+          || request.resource.data.reviewedBy is string
+        )
+        && (
+          !request.resource.data.keys().hasAny(['rejectionReason'])
+          || request.resource.data.rejectionReason == null
+          || request.resource.data.rejectionReason is string
+        );
+      allow delete: if isStaff();
+    }
+
+    match /complaints/{complaintId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'ticketId',
+          'category',
+          'cropType',
+          'description',
+          'district',
+          'status',
+          'evidenceImageUrl',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.uid is string
+        && request.resource.data.ticketId is string
+        && request.resource.data.category is string
+        && request.resource.data.cropType is string
+        && request.resource.data.description is string
+        && request.resource.data.district is string
+        && request.resource.data.status == 'submitted'
+        && (request.resource.data.evidenceImageUrl == null
+          || request.resource.data.evidenceImageUrl is string)
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow read: if request.auth != null
+        && (resource.data.uid == request.auth.uid || isStaff());
       allow update, delete: if false;
     }
   }

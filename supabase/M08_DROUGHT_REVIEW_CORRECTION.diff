@@ -1,0 +1,266 @@
+diff --git a/supabase/migrations/20261008_m08_drought_report_review.sql b/supabase/migrations/20261008_m08_drought_report_review.sql
+index fa7b204..36d019f 100644
+--- a/supabase/migrations/20261008_m08_drought_report_review.sql
++++ b/supabase/migrations/20261008_m08_drought_report_review.sql
+@@ -1,8 +1,15 @@
+ -- Prepared only. Requires the M08 shared-complaints baseline, NOT migration 6.
++-- EXPANSION PHASE: temporary legacy submission/admin-write compatibility.
++-- Finalization lives outside migrations/ so a batch cannot end the grace period.
+ -- No old categories, references, descriptions, or statuses are rewritten.
+ begin;
+ 
++-- Serialize the exact catalog preflight and replacement; no unchecked gap.
++lock table public.complaints in access exclusive mode;
+ do $$
++declare
++  status_attnum smallint;
++  status_check record;
+ begin
+   if to_regprocedure('public.agriwatch_complaints_staff_v1()') is null
+      or to_regprocedure('public.agriwatch_complaints_web_uid_v1()') is null
+@@ -14,8 +21,38 @@ begin
+      or not exists (select 1 from pg_policy where polrelid = 'public.complaints'::regclass and polname = 'M08 complaint staff update') then
+     raise exception 'Inspect live schema/RLS: the M08 shared complaints baseline is required.';
+   end if;
++  select attnum into status_attnum from pg_attribute
++    where attrelid = 'public.complaints'::regclass and attname = 'status'
++      and atttypid = 'text'::regtype and attnotnull and not attisdropped;
++  select contype, convalidated, connoinherit, conkey,
++         pg_get_constraintdef(oid, false) as definition into status_check
++    from pg_constraint where conrelid = 'public.complaints'::regclass
++      and conname = 'complaints_status_check';
++  if status_attnum is null or not found
++     or status_check.contype is distinct from 'c'
++     or status_check.convalidated is distinct from true
++     or status_check.connoinherit is distinct from false
++     or status_check.conkey is distinct from array[status_attnum]::smallint[]
++     or status_check.definition is distinct from
++       'CHECK ((status = ANY (ARRAY[''Under Review''::text, ''Forwarded''::text, ''Resolved''::text])))'
++     or exists (select 1 from pg_constraint
++       where conrelid = 'public.complaints'::regclass and contype = 'c'
++         and status_attnum = any(conkey) and conname <> 'complaints_status_check') then
++    raise exception 'Expected exactly the validated complaints_status_check for Under Review, Forwarded, Resolved; inspect the actual catalog definition before proceeding.';
++  end if;
++  if (select pg_get_expr(d.adbin, d.adrelid)
++      from pg_attrdef d where d.adrelid = 'public.complaints'::regclass
++        and d.adnum = status_attnum) is distinct from '''Under Review''::text' then
++    raise exception 'Expected the legacy Under Review status default during expansion.';
++  end if;
+ end $$;
+ 
++alter table public.complaints drop constraint complaints_status_check;
++alter table public.complaints add constraint complaints_status_check check (
++  status in ('Under Review', 'Forwarded', 'Resolved', 'Submitted', 'Assigned for PDMA review')
++) not valid;
++alter table public.complaints validate constraint complaints_status_check;
++
+ -- Separate complaint authorization, provisioned only by a trusted DB operator
+ -- after checking PDMA identity AND district authority. Signup rows are irrelevant.
+ create table public.agriwatch_pdma_report_permissions (
+@@ -46,7 +83,8 @@ alter table public.complaints
+   add column pdma_assignment_reason text,
+   add column resolved_at timestamptz,
+   add column resolved_by uuid references auth.users(id);
+-alter table public.complaints alter column status set default 'Submitted';
++-- Keep Under Review as the default until supported clients have upgraded.
++-- No review timestamp exists on receipt: updated clients display it as pending.
+ create index complaints_pdma_assignment_idx on public.complaints (pdma_assigned_to, district)
+   where pdma_assigned_at is not null;
+ 
+@@ -73,7 +111,7 @@ create policy "M08 complaint owner admin or assigned PDMA read" on public.compla
+ drop policy "M08 complaint owner insert" on public.complaints;
+ create policy "M08 drought report owner insert" on public.complaints
+   for insert to authenticated with check (
+-    status = 'Submitted' and resolution_note is null and handled_by is null
++    status in ('Submitted', 'Under Review') and resolution_note is null and handled_by is null
+     and review_started_at is null and review_started_by is null
+     and admin_responded_at is null and admin_responded_by is null
+     and pdma_assigned_at is null and pdma_assigned_to is null and pdma_assigned_by is null
+@@ -86,9 +124,13 @@ create policy "M08 drought report owner insert" on public.complaints
+         and auth.jwt() ->> 'aud' = 'agriwatch-pakistan')
+     )
+   );
+--- No client, including an admin client, can fabricate action timestamps or status.
+--- Security-definer RPC below is the sole authenticated review write path.
+-drop policy "M08 complaint staff update" on public.complaints;
++-- Temporary compatibility for an explicit Under Review in old INSERT payloads.
++-- RLS still rejects submitted-as-Forwarded/Resolved/Assigned payloads.
++grant insert (status) on public.complaints to authenticated;
++
++-- Preserve old allowlisted ADMIN web updates during web cutover. Never restore
++-- signup-based PDMA writes. Clear blanket/column UPDATE grants, then restore
++-- only these four legacy fields; action/assignment fields remain RPC-only.
+ revoke update on public.complaints from public, anon, authenticated;
+ do $$
+ declare c record;
+@@ -99,13 +141,29 @@ begin
+     execute format('revoke update (%I) on public.complaints from public, anon, authenticated', c.attname);
+   end loop;
+ end $$;
++grant update (status, resolution_note, handled_by, updated_at)
++  on public.complaints to authenticated;
++drop policy "M08 complaint staff update" on public.complaints;
++create policy "M08 complaint staff update" on public.complaints
++  for update to authenticated
++  using (public.agriwatch_complaints_staff_v1())
++  with check (public.agriwatch_complaints_staff_v1());
+ 
+--- INSERT-only validation deliberately leaves legacy rows untouched and editable
+--- through the admin review RPC, including CMP-7A1E716B604A.
++-- INSERT-only validation preserves all stored rows, including CMP-7A1E716B604A.
++-- New clients already offer only drought categories. During the grace period,
++-- accept the exact known old mobile/farmer/public choices and their old optional
++-- fields without relabeling them or inventing review/referral actions.
+ create function public.agriwatch_validate_new_drought_report_v1()
+ returns trigger language plpgsql set search_path = pg_catalog, public
+ as $function$
+ begin
++  if new.category in (
++    'Pest infestation', 'Water shortage', 'Crop damage', 'Drought / weather', 'Other',
++    'Crop Failure', 'Irrigation Shortage', 'Livestock Loss',
++    'Water Shortage', 'Crop Damage', 'Well / Tubewell Dried Up', 'Relief Not Received'
++  ) then
++    return new;
++  end if;
+   if new.category is null or new.category not in (
+     'Prolonged water shortage affecting an area or multiple farms',
+     'Observed drought conditions affecting a community',
+@@ -124,7 +182,8 @@ create trigger validate_new_drought_report before insert on public.complaints
+ create function public.agriwatch_report_access_v1()
+ returns jsonb language sql stable security definer set search_path = pg_catalog, public
+ as $function$
+-  select jsonb_build_object('admin', public.agriwatch_complaints_staff_v1(),
++  select jsonb_build_object('rollout_phase', 'compatibility',
++    'admin', public.agriwatch_complaints_staff_v1(),
+     'districts', coalesce((select jsonb_agg(p.district order by p.district)
+       from public.agriwatch_pdma_report_permissions p
+       where p.user_id = public.agriwatch_complaints_web_uid_v1() and p.active), '[]'::jsonb));
+diff --git a/supabase/rollout/m08_finalize_drought_report_compatibility.sql b/supabase/rollout/m08_finalize_drought_report_compatibility.sql
+new file mode 100644
+index 0000000..7ae4179
+--- /dev/null
++++ b/supabase/rollout/m08_finalize_drought_report_compatibility.sql
+@@ -0,0 +1,123 @@
++-- MANUAL FINALIZATION ONLY; intentionally outside migrations/.
++-- Do not apply with expansion. Gates are in M08_DROUGHT_REPORT_ROLLOUT.md.
++-- No existing category, reference, status, or report is rewritten.
++begin;
++lock table public.complaints in access exclusive mode;
++
++do $$
++declare
++  status_attnum smallint;
++  status_check record;
++begin
++  if to_regprocedure('public.agriwatch_review_report_v1(uuid,text,text,uuid,text)') is null
++     or to_regprocedure('public.agriwatch_validate_new_drought_report_v1()') is null
++     or (select count(*) from pg_policy where polrelid = 'public.complaints'::regclass) <> 3
++     or not exists (select 1 from pg_policy where polrelid = 'public.complaints'::regclass
++       and polname = 'M08 complaint owner admin or assigned PDMA read')
++     or not exists (select 1 from pg_policy where polrelid = 'public.complaints'::regclass
++       and polname = 'M08 drought report owner insert')
++     or not exists (select 1 from pg_policy where polrelid = 'public.complaints'::regclass
++       and polname = 'M08 complaint staff update') then
++    raise exception 'Expected the M08 compatibility-phase schema and policies.';
++  end if;
++  select attnum into status_attnum from pg_attribute
++    where attrelid = 'public.complaints'::regclass and attname = 'status'
++      and atttypid = 'text'::regtype and attnotnull and not attisdropped;
++  select contype, convalidated, connoinherit, conkey,
++         pg_get_constraintdef(oid, false) as definition into status_check
++    from pg_constraint where conrelid = 'public.complaints'::regclass
++      and conname = 'complaints_status_check';
++  if status_attnum is null or not found
++     or status_check.contype is distinct from 'c'
++     or status_check.convalidated is distinct from true
++     or status_check.connoinherit is distinct from false
++     or status_check.conkey is distinct from array[status_attnum]::smallint[]
++     or status_check.definition is distinct from
++       'CHECK ((status = ANY (ARRAY[''Under Review''::text, ''Forwarded''::text, ''Resolved''::text, ''Submitted''::text, ''Assigned for PDMA review''::text])))'
++     or exists (select 1 from pg_constraint
++       where conrelid = 'public.complaints'::regclass and contype = 'c'
++         and status_attnum = any(conkey) and conname <> 'complaints_status_check') then
++    raise exception 'Expected the validated five-value M08 status constraint; inspect before finalizing.';
++  end if;
++  if (select pg_get_expr(d.adbin, d.adrelid)
++      from pg_attrdef d where d.adrelid = 'public.complaints'::regclass
++        and d.adnum = status_attnum) is distinct from '''Under Review''::text' then
++    raise exception 'Expected the compatibility Under Review default.';
++  end if;
++end $$;
++
++-- Preserve all five constraint values: three are necessary for stored legacy rows.
++alter table public.complaints alter column status set default 'Submitted';
++revoke insert (status) on public.complaints from authenticated;
++drop policy "M08 drought report owner insert" on public.complaints;
++create policy "M08 drought report owner insert" on public.complaints
++  for insert to authenticated with check (
++    status = 'Submitted' and resolution_note is null and handled_by is null
++    and review_started_at is null and review_started_by is null
++    and admin_responded_at is null and admin_responded_by is null
++    and pdma_assigned_at is null and pdma_assigned_to is null and pdma_assigned_by is null
++    and pdma_assignment_reason is null and resolved_at is null and resolved_by is null
++    and (
++      (firebase_uid is null and user_id = public.agriwatch_complaints_web_uid_v1())
++      or (user_id is null and firebase_uid = auth.jwt() ->> 'sub'
++        and auth.jwt() ->> 'role' = 'authenticated'
++        and auth.jwt() ->> 'iss' = 'https://securetoken.google.com/agriwatch-pakistan'
++        and auth.jwt() ->> 'aud' = 'agriwatch-pakistan')
++    )
++  );
++
++create or replace function public.agriwatch_validate_new_drought_report_v1()
++returns trigger language plpgsql set search_path = pg_catalog, public
++as $function$
++begin
++  if new.category is null or new.category not in (
++    'Prolonged water shortage affecting an area or multiple farms',
++    'Observed drought conditions affecting a community',
++    'Incorrect or missing AgriWatch drought alert',
++    'Other drought-related situation'
++  ) or new.district is null or length(btrim(new.district)) = 0
++    or new.description is null or length(btrim(new.description)) < 10 then
++    raise exception 'Choose a drought category and district, and describe the situation (at least 10 characters).';
++  end if;
++  return new;
++end;
++$function$;
++
++drop policy "M08 complaint staff update" on public.complaints;
++revoke update on public.complaints from public, anon, authenticated;
++do $$
++declare c record;
++begin
++  for c in select attname from pg_attribute where attrelid = 'public.complaints'::regclass
++    and attnum > 0 and not attisdropped
++  loop
++    execute format('revoke update (%I) on public.complaints from public, anon, authenticated', c.attname);
++  end loop;
++end $$;
++
++create or replace function public.agriwatch_report_access_v1()
++returns jsonb language sql stable security definer set search_path = pg_catalog, public
++as $function$
++  select jsonb_build_object('rollout_phase', 'strict',
++    'admin', public.agriwatch_complaints_staff_v1(),
++    'districts', coalesce((select jsonb_agg(p.district order by p.district)
++      from public.agriwatch_pdma_report_permissions p
++      where p.user_id = public.agriwatch_complaints_web_uid_v1() and p.active), '[]'::jsonb));
++$function$;
++
++do $$
++declare c record;
++begin
++  if has_table_privilege('authenticated', 'public.complaints', 'UPDATE')
++     or has_column_privilege('authenticated', 'public.complaints', 'status', 'INSERT') then
++    raise exception 'Temporary status INSERT or blanket UPDATE grant remains.';
++  end if;
++  for c in select attname from pg_attribute where attrelid = 'public.complaints'::regclass
++    and attnum > 0 and not attisdropped
++  loop
++    if has_column_privilege('authenticated', 'public.complaints', c.attname, 'UPDATE') then
++      raise exception 'Temporary complaint UPDATE grant remains on %.', c.attname;
++    end if;
++  end loop;
++end $$;
++commit;

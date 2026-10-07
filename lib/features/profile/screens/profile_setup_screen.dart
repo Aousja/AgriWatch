@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
-import '../../home/home_screen.dart';
+import '../../shell/app_shell.dart';
 import '../../../core/services/local_storage_service.dart';
 import '../models/user_profile.dart';
 import '../services/user_profile_service.dart';
@@ -60,7 +60,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const AppShell()),
       );
     } catch (e) {
       if (!mounted) return;

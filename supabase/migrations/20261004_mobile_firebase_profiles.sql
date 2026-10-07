@@ -114,3 +114,4 @@ grant update (
 revoke all on function public.mobile_firebase_profiles_set_updated_at() from public;
 grant execute on function public.mobile_firebase_profiles_set_updated_at()
   to authenticated;
+

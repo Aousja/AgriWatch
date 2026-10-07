@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
-import '../home/home_screen.dart';
+import '../shell/app_shell.dart';
 import '../profile/screens/profile_setup_screen.dart';
 import '../profile/services/user_profile_service.dart';
 import 'screens/welcome_screen.dart';
@@ -58,7 +58,7 @@ class _AuthGateState extends State<AuthGate> {
       if (profile != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const AppShell()),
         );
         return;
       }
