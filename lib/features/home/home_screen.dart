@@ -3,6 +3,7 @@ import 'package:iconsax/iconsax.dart';
 
 import '../../core/design/app_design.dart';
 import '../alerts/alerts_screen.dart';
+import '../advisory/advisory_screen.dart';
 import '../complaints/complaints_screen.dart';
 import '../profile/models/user_profile.dart';
 
@@ -92,10 +93,19 @@ class HomeScreen extends StatelessWidget {
                     'مقامی خشک سالی کی معلومات',
                   ),
             subtitle: AppCopy.text(
-              'Prepared for live insights',
+              _isFarmer
+                  ? 'Ask the farmer advisory agent'
+                  : 'Prepared for live insights',
               'لائیو معلومات کے لیے تیار',
             ),
-            onTap: () => _comingSoon(context),
+            onTap: () => _isFarmer
+                ? Navigator.of(context).push(
+                    MaterialPageRoute(
+                      settings: const RouteSettings(name: 'farmer-advisory'),
+                      builder: (_) => const AdvisoryScreen(),
+                    ),
+                  )
+                : _comingSoon(context),
           ),
           const SizedBox(height: 10),
           ActionTile(

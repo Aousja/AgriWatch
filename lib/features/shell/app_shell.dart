@@ -4,6 +4,7 @@ import 'package:iconsax/iconsax.dart';
 
 import '../../core/design/app_design.dart';
 import '../alerts/alerts_screen.dart';
+import '../advisory/advisory_hint_notification.dart';
 import '../complaints/complaints_screen.dart';
 import '../home/home_screen.dart';
 import '../profile/models/user_profile.dart';
@@ -56,8 +57,11 @@ class _AppShellState extends State<AppShell> {
               : IndexedStack(index: _selectedIndex, children: pages),
           bottomNavigationBar: NavigationBar(
             selectedIndex: _selectedIndex,
-            onDestinationSelected: (index) =>
-                setState(() => _selectedIndex = index),
+            onDestinationSelected: (index) {
+              if (index == _selectedIndex) return;
+              setState(() => _selectedIndex = index);
+              AdvisoryHintNotification().dispatch(context);
+            },
             destinations: [
               NavigationDestination(
                 icon: const Icon(Iconsax.home_2),

@@ -49,8 +49,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         photoUrl: widget.user.photoURL,
         role: _selectedRole!,
         district: _districtController.text.trim().isEmpty
-          ? null
-          : _districtController.text.trim(),
+            ? null
+            : _districtController.text.trim(),
         createdAt: DateTime.now(),
       );
 
@@ -60,7 +60,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const AppShell()),
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'app-shell'),
+          builder: (_) => const AppShell(),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -138,7 +141,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 24),
               Text(
                 _isUrdu ? 'اپنا کردار منتخب کریں' : 'Choose your role',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 10),
               _roleCard(
@@ -171,7 +177,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       borderRadius: BorderRadius.circular(18),
                     ),
                   ),
-                  onPressed: _isSaving || _selectedRole == null ? null : _saveProfile,
+                  onPressed: _isSaving || _selectedRole == null
+                      ? null
+                      : _saveProfile,
                   child: _isSaving
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
@@ -220,9 +228,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(description, style: TextStyle(color: Colors.grey.shade700, height: 1.3)),
+                  Text(
+                    description,
+                    style: TextStyle(color: Colors.grey.shade700, height: 1.3),
+                  ),
                 ],
               ),
             ),
