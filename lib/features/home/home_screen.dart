@@ -3,6 +3,7 @@ import 'package:iconsax/iconsax.dart';
 
 import '../../core/design/app_design.dart';
 import '../alerts/alerts_screen.dart';
+import '../advisory/advisory_screen.dart';
 import '../complaints/complaints_screen.dart';
 import '../profile/models/user_profile.dart';
 
@@ -10,8 +11,6 @@ class HomeScreen extends StatelessWidget {
   final UserProfile? profile;
 
   const HomeScreen({super.key, this.profile});
-
-  bool get _isFarmer => profile?.role == 'farmer';
 
   @override
   Widget build(BuildContext context) {
@@ -85,17 +84,17 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 10),
           ActionTile(
             icon: Iconsax.activity,
-            title: _isFarmer
-                ? AppCopy.text('Crop advisory', 'فصل کا مشورہ')
-                : AppCopy.text(
-                    'Local drought information',
-                    'مقامی خشک سالی کی معلومات',
-                  ),
+            title: AppCopy.text('Farming Advisory', 'زرعی مشورہ'),
             subtitle: AppCopy.text(
-              'Prepared for live insights',
-              'لائیو معلومات کے لیے تیار',
+              'Ask about crops, soil, irrigation, and pests',
+              'فصلوں، مٹی، آبپاشی اور کیڑوں کے بارے میں پوچھیں',
             ),
-            onTap: () => _comingSoon(context),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                settings: const RouteSettings(name: 'farmer-advisory'),
+                builder: (_) => const AdvisoryScreen(),
+              ),
+            ),
           ),
           const SizedBox(height: 10),
           ActionTile(
@@ -131,16 +130,4 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void _comingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          AppCopy.text(
-            'This insight will be available when live monitoring is connected.',
-            'لائیو نگرانی منسلک ہونے پر یہ معلومات دستیاب ہوں گی۔',
-          ),
-        ),
-      ),
-    );
-  }
 }
