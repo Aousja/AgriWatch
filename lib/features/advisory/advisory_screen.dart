@@ -9,7 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../chat_api.dart';
+import '../../chat/chat_api.dart';
 import '../../core/design/app_design.dart';
 
 class AdvisoryScreen extends StatefulWidget {
