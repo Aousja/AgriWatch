@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/design/app_design.dart';
 import '../models/complaint_status.dart';
+import '../../../core/design/workflow_copy.dart';
 
 class ComplaintStatusBadge extends StatelessWidget {
   final ComplaintStatus status;
@@ -15,7 +16,7 @@ class ComplaintStatusBadge extends StatelessWidget {
       borderRadius: BorderRadius.circular(30),
     ),
     child: Text(
-      status.label,
+      WorkflowCopy.text(status.label),
       style: const TextStyle(
         color: AppDesign.greenDark,
         fontSize: 12,

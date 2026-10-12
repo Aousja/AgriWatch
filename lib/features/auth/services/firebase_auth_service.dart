@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/services/supabase_bridge.dart';
+import '../../../core/services/local_storage_service.dart';
 
 class FirebaseAuthService {
   FirebaseAuthService._();
@@ -10,6 +12,7 @@ class FirebaseAuthService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final Map<String, ConfirmationResult> _webPhoneConfirmations = {};
 
   /// Send OTP
   Future<void> sendOTP({
@@ -17,9 +20,22 @@ class FirebaseAuthService {
     required Function(String verificationId) codeSent,
     required Function(String error) onError,
     required Future<void> Function(UserCredential credential)
-      onVerificationCompleted,
+    onVerificationCompleted,
   }) async {
     try {
+      if (kIsWeb) {
+        final confirmation = await _auth.signInWithPhoneNumber(phoneNumber);
+        _webPhoneConfirmations[confirmation.verificationId] = confirmation;
+        codeSent(confirmation.verificationId);
+        return;
+      }
+      if (defaultTargetPlatform != TargetPlatform.android &&
+          defaultTargetPlatform != TargetPlatform.iOS) {
+        onError(
+          'Phone sign-in is supported on Android, iOS, and web. Use email on this device.',
+        );
+        return;
+      }
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
 
@@ -39,10 +55,7 @@ class FirebaseAuthService {
           onError(e.message ?? "Phone verification failed.");
         },
 
-        codeSent: (
-          String verificationId,
-          int? resendToken,
-        ) {
+        codeSent: (String verificationId, int? resendToken) {
           codeSent(verificationId);
         },
 
@@ -59,6 +72,19 @@ class FirebaseAuthService {
     required String smsCode,
   }) async {
     try {
+      if (kIsWeb) {
+        final confirmation = _webPhoneConfirmations[verificationId];
+        if (confirmation == null) {
+          throw FirebaseAuthException(
+            code: 'session-expired',
+            message: 'Request a new verification code.',
+          );
+        }
+        final credential = await confirmation.confirm(smsCode);
+        _webPhoneConfirmations.clear();
+        await SupabaseBridge.refreshTokenAfterClaimAssignment();
+        return credential;
+      }
       final credential = PhoneAuthProvider.credential(
         verificationId: verificationId,
         smsCode: smsCode,
@@ -173,8 +199,14 @@ class FirebaseAuthService {
 
   /// Logout
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
     await _auth.signOut();
+    _webPhoneConfirmations.clear();
+    await LocalStorageService.setLoggedIn(false);
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {
+      /* Firebase is signed out. */
+    }
   }
 
   /// Current User

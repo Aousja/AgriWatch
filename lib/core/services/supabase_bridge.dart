@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
+import '../../features/auth/services/application_role.dart';
 
 /// The additive Firebase Auth -> Supabase third-party-auth bridge.
 class SupabaseBridge {
@@ -57,15 +58,11 @@ class SupabaseBridge {
   /// Refreshes the Firebase application-role claim after a trusted approval.
   /// The reserved Firebase/Supabase bridge claim remains `authenticated`.
   static Future<String?> refreshApplicationRole() async {
-    if (!SupabaseConfig.isConfigured) return null;
-
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
     final tokenResult = await user.getIdTokenResult(true);
-    final role = tokenResult.claims?['agriwatch_role'];
-    if (role == 'pdma_officer' || role == 'ngo') return role as String;
-    return null;
+    return ApplicationRole.trusted(tokenResult.claims);
   }
 
   /// Inserts and reads one row from the isolated bridge verification table.
@@ -93,7 +90,8 @@ class SupabaseBridge {
         .from('firebase_bridge_test_rows')
         .insert({
           'owner_uid': user.uid,
-          'payload': 'agriwatch-bridge-${DateTime.now().toUtc().toIso8601String()}',
+          'payload':
+              'agriwatch-bridge-${DateTime.now().toUtc().toIso8601String()}',
         })
         .select('id, owner_uid, payload, created_at')
         .single();

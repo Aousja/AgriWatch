@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "AgriWatch (Supabase)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/lib/main.dart",
+      "toolArgs": [
+        "--dart-define-from-file=${workspaceFolder}/.local/flutter-defines.json"
+      ]
+    }
+  ]
+}

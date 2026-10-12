@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import '../../../core/design/app_design.dart';
 import '../models/report_categories.dart';
+import '../../../core/design/workflow_copy.dart';
 
 class ComplaintCategorySelector extends StatelessWidget {
   final String? selected;
   final ValueChanged<String?> onSelected;
+  final bool enabled;
   const ComplaintCategorySelector({
     super.key,
     required this.selected,
     required this.onSelected,
+    this.enabled = true,
   });
   static final items = [
     (droughtReportCategories[0], Iconsax.drop),
@@ -26,11 +29,13 @@ class ComplaintCategorySelector extends StatelessWidget {
           (item) => ChoiceChip(
             label: SizedBox(
               width: MediaQuery.sizeOf(context).width - 120,
-              child: Text(item.$1, softWrap: true),
+              child: Text(WorkflowCopy.text(item.$1), softWrap: true),
             ),
             avatar: Icon(item.$2, size: 17),
             selected: selected == item.$1,
-            onSelected: (_) => onSelected(selected == item.$1 ? null : item.$1),
+            onSelected: enabled
+                ? (_) => onSelected(selected == item.$1 ? null : item.$1)
+                : null,
             selectedColor: AppDesign.greenSoft,
             side: const BorderSide(color: AppDesign.border),
             labelStyle: TextStyle(

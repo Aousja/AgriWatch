@@ -8,7 +8,6 @@ import 'email_auth_screen.dart';
 import 'otp_screen.dart';
 import 'package:agriwatch/core/utils/phone_utils.dart';
 import '../services/firebase_auth_service.dart';
-import 'package:agriwatch/core/config/app_config.dart';
 import 'package:agriwatch/core/services/local_storage_service.dart';
 import '../auth_gate.dart';
 import '../widgets/google_logo_icon.dart';
@@ -16,10 +15,7 @@ import '../widgets/google_logo_icon.dart';
 class PhoneScreen extends StatefulWidget {
   final String mode;
 
-  const PhoneScreen({
-    super.key,
-    this.mode = 'signIn',
-  });
+  const PhoneScreen({super.key, this.mode = 'signIn'});
 
   @override
   State<PhoneScreen> createState() => _PhoneScreenState();
@@ -52,119 +48,67 @@ class _PhoneScreenState extends State<PhoneScreen> {
   }
 
   Future<void> sendOTP() async {
+    if (!isValid || isLoading) return;
 
-  // ==========================
-  // DEVELOPMENT MODE
-  // ==========================
-  if (!AppConfig.useFirebaseOTP) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OTPScreen(
-          phoneNumber: PhoneUtils.firebaseNumber(
-            phoneController.text,
+    // ==========================
+    // FIREBASE MODE
+    // ==========================
+
+    setState(() {
+      isLoading = true;
+    });
+
+    await FirebaseAuthService.instance.sendOTP(
+      phoneNumber: PhoneUtils.firebaseNumber(phoneController.text),
+
+      codeSent: (verificationId) {
+        if (!mounted) return;
+        setState(() {
+          isLoading = false;
+        });
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OTPScreen(
+              phoneNumber: PhoneUtils.firebaseNumber(phoneController.text),
+              verificationId: verificationId,
+              mode: widget.mode,
+            ),
           ),
-          verificationId: "development_mode",
-          mode: widget.mode,
-        ),
-      ),
+        );
+      },
+
+      onVerificationCompleted: (_) async {
+        if (!mounted) return;
+        setState(() {
+          isLoading = false;
+        });
+
+        LocalStorageService.setLoggedIn(true);
+
+        if (!mounted) return;
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const AuthGate()),
+          (route) => false,
+        );
+      },
+
+      onError: (error) {
+        if (!mounted) return;
+        setState(() {
+          isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
+        );
+      },
     );
-    return;
   }
 
-  // ==========================
-  // FIREBASE MODE
-  // ==========================
-
-  setState(() {
-    isLoading = true;
-  });
-
-  await FirebaseAuthService.instance.sendOTP(
-    phoneNumber: PhoneUtils.firebaseNumber(
-      phoneController.text,
-    ),
-
-    codeSent: (verificationId) {
-      setState(() {
-        isLoading = false;
-      });
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OTPScreen(
-            phoneNumber: PhoneUtils.firebaseNumber(
-              phoneController.text,
-            ),
-            verificationId: verificationId,
-            mode: widget.mode,
-          ),
-        ),
-      );
-    },
-
-    onVerificationCompleted: (credential) async {
-      setState(() {
-        isLoading = false;
-      });
-
-      final isNewUser = credential.additionalUserInfo?.isNewUser ?? false;
-
-      if (widget.mode == 'signIn' && isNewUser) {
-        await FirebaseAuth.instance.currentUser?.delete();
-        await FirebaseAuth.instance.signOut();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No account found for this phone number. Please sign up first.',
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      if (widget.mode == 'signUp' && !isNewUser) {
-        await FirebaseAuth.instance.signOut();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'This phone account already exists. Please sign in instead.',
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      LocalStorageService.setLoggedIn(true);
-
-      if (!mounted) return;
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const AuthGate()),
-        (route) => false,
-      );
-    },
-
-    onError: (error) {
-      setState(() {
-        isLoading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: Colors.red,
-        ),
-      );
-    },
-  );
-}
   @override
   Widget build(BuildContext context) {
     const green = Color(0xff2E7D32);
@@ -195,7 +139,6 @@ class _PhoneScreenState extends State<PhoneScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Hero(
                 tag: "app_logo",
                 child: Center(
@@ -224,11 +167,11 @@ class _PhoneScreenState extends State<PhoneScreen> {
               Text(
                 widget.mode == 'signIn'
                     ? (_isUrdu
-                        ? 'آپ کیسے سائن اِن کرنا چاہتے ہیں؟'
-                        : 'How would you like to sign in?')
+                          ? 'آپ کیسے سائن اِن کرنا چاہتے ہیں؟'
+                          : 'How would you like to sign in?')
                     : (_isUrdu
-                        ? 'شروع کرنے کے لیے طریقہ منتخب کریں۔'
-                        : 'Choose how you would like to get started.'),
+                          ? 'شروع کرنے کے لیے طریقہ منتخب کریں۔'
+                          : 'Choose how you would like to get started.'),
                 style: TextStyle(
                   color: Colors.grey.shade700,
                   fontSize: 16,
@@ -241,11 +184,11 @@ class _PhoneScreenState extends State<PhoneScreen> {
               Text(
                 widget.mode == 'signIn'
                     ? (_isUrdu
-                        ? 'اپنا موبائل نمبر درج کریں، ہم تصدیقی کوڈ بھیجیں گے۔'
-                        : "Use your mobile number and we'll send a verification code.")
+                          ? 'اپنا موبائل نمبر درج کریں، ہم تصدیقی کوڈ بھیجیں گے۔'
+                          : "Use your mobile number and we'll send a verification code.")
                     : (_isUrdu
-                        ? 'کسانوں کے لیے تجویز کردہ، تصدیقی کوڈ بھیجا جائے گا۔'
-                        : "Recommended for farmers. We'll send a verification code."),
+                          ? 'کسانوں کے لیے تجویز کردہ، تصدیقی کوڈ بھیجا جائے گا۔'
+                          : "Recommended for farmers. We'll send a verification code."),
                 style: TextStyle(
                   color: Colors.grey.shade700,
                   fontSize: 15,
@@ -257,32 +200,22 @@ class _PhoneScreenState extends State<PhoneScreen> {
 
               Text(
                 _isUrdu ? 'فون نمبر' : 'Phone number',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
 
               const SizedBox(height: 10),
 
-              AuthTextField(
-                
-                controller: phoneController,
-              ),
+              AuthTextField(controller: phoneController),
 
               const SizedBox(height: 12),
 
               Row(
                 children: [
-                  const Icon(
-                    Iconsax.info_circle,
-                    size: 18,
-                    color: green,
-                  ),
+                  const Icon(Iconsax.info_circle, size: 18, color: green),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                        _isUrdu
+                      _isUrdu
                           ? 'فی الحال صرف پاکستانی موبائل نمبرز معاونت یافتہ ہیں۔'
                           : 'Only Pakistani mobile numbers are currently supported.',
                       style: TextStyle(
@@ -295,12 +228,12 @@ class _PhoneScreenState extends State<PhoneScreen> {
               ),
               const SizedBox(height: 26),
 
-              
-
               AuthButton(
-                  text: isLoading
+                text: isLoading
                     ? (_isUrdu ? 'بھیجا جا رہا ہے...' : 'Sending...')
-                    : (_isUrdu ? 'فون کے ساتھ جاری رکھیں' : 'Continue with Phone'),
+                    : (_isUrdu
+                          ? 'فون کے ساتھ جاری رکھیں'
+                          : 'Continue with Phone'),
                 onPressed: isValid && !isLoading ? sendOTP : null,
               ),
 
@@ -313,7 +246,10 @@ class _PhoneScreenState extends State<PhoneScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
                       _isUrdu ? 'یا اس کے ساتھ جاری رکھیں' : 'or continue with',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                   Expanded(child: Divider(color: Colors.grey.shade300)),
@@ -338,18 +274,22 @@ class _PhoneScreenState extends State<PhoneScreen> {
                     final navigator = Navigator.of(context);
 
                     try {
-                      final credential = await FirebaseAuthService.instance.signInWithGoogle();
+                      final credential = await FirebaseAuthService.instance
+                          .signInWithGoogle();
 
                       if (!mounted) return;
 
                       if (credential == null) {
                         messenger?.showSnackBar(
-                          const SnackBar(content: Text('Google sign-in was cancelled.')),
+                          const SnackBar(
+                            content: Text('Google sign-in was cancelled.'),
+                          ),
                         );
                         return;
                       }
 
-                      final isNewUser = credential.additionalUserInfo?.isNewUser ?? false;
+                      final isNewUser =
+                          credential.additionalUserInfo?.isNewUser ?? false;
 
                       if (widget.mode == 'signIn' && isNewUser) {
                         await FirebaseAuth.instance.currentUser?.delete();
@@ -359,7 +299,9 @@ class _PhoneScreenState extends State<PhoneScreen> {
 
                         messenger?.showSnackBar(
                           const SnackBar(
-                            content: Text('No Google account found. Please sign up first.'),
+                            content: Text(
+                              'No Google account found. Please sign up first.',
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -373,7 +315,9 @@ class _PhoneScreenState extends State<PhoneScreen> {
 
                         messenger?.showSnackBar(
                           const SnackBar(
-                            content: Text('This account already exists. Please sign in instead.'),
+                            content: Text(
+                              'This account already exists. Please sign in instead.',
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -391,12 +335,14 @@ class _PhoneScreenState extends State<PhoneScreen> {
                       if (!mounted) return;
 
                       final message = e.toString().toLowerCase();
-                      if (message.contains('cancel') || message.contains('aborted')) {
+                      if (message.contains('cancel') ||
+                          message.contains('aborted')) {
                         return;
                       }
 
                       if (e is FirebaseAuthException &&
-                          e.code == 'account-exists-with-different-credential') {
+                          e.code ==
+                              'account-exists-with-different-credential') {
                         messenger?.showSnackBar(
                           const SnackBar(
                             content: Text(
@@ -418,11 +364,10 @@ class _PhoneScreenState extends State<PhoneScreen> {
                   },
                   icon: const GoogleLogoIcon(size: 22),
                   label: Text(
-                    _isUrdu ? 'گوگل کے ساتھ جاری رکھیں' : 'Continue with Google',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    _isUrdu
+                        ? 'گوگل کے ساتھ جاری رکھیں'
+                        : 'Continue with Google',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -450,11 +395,10 @@ class _PhoneScreenState extends State<PhoneScreen> {
                   },
                   icon: const Icon(Iconsax.sms, size: 24),
                   label: Text(
-                    _isUrdu ? 'ای میل کے ساتھ جاری رکھیں' : 'Continue with Email',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    _isUrdu
+                        ? 'ای میل کے ساتھ جاری رکھیں'
+                        : 'Continue with Email',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

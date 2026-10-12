@@ -1,0 +1,10 @@
+body { margin: 0; font-family: system-ui, sans-serif; background: #edf5ef; color: #143322; }
+.stage-shell { max-width: 760px; margin: 40px auto; padding: 32px; background: white; border-radius: 16px; }
+label { display: block; margin: 16px 0; }
+input, select { display: block; box-sizing: border-box; width: 100%; padding: 12px; margin-top: 6px; font: inherit; }
+button { padding: 12px 18px; margin: 6px 8px 6px 0; border: 0; border-radius: 6px; background: #176a3c; color: white; cursor: pointer; font: inherit; }
+button:disabled { opacity: .55; cursor: default; }
+article { padding: 16px; margin: 12px 0; background: #edf5ef; border-radius: 8px; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
+[role=alert] { color: #a32323; }
+@media (max-width: 600px) { .stage-shell { margin: 0; padding: 20px; border-radius: 0; } }

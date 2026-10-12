@@ -30,11 +30,8 @@ async function verifyWebAdmin(accessToken, request) {
   });
   if (!user?.id) throw new ApprovalWorkflowError('Invalid Supabase session.', 'unauthorized', 401);
 
-  const isAdmin = await request('/rest/v1/rpc/agriwatch_review_web_admin_v1', {
-    method: 'POST',
-    body: JSON.stringify({ candidate_uid: user.id }),
-  });
-  if (isAdmin !== true) {
+  const members = await request(`/rest/v1/admins?user_id=eq.${encodeURIComponent(user.id)}&select=user_id&limit=1`);
+  if (!Array.isArray(members) || !members.some(member => member.user_id === user.id)) {
     throw new ApprovalWorkflowError('Supabase admin authorization required.', 'forbidden', 403);
   }
   return user.id;
@@ -147,6 +144,9 @@ async function reviewAccessRequest({
       422,
     );
   }
+  if (requestedRole === 'officer' && (!request.district || !request.district.trim())) {
+    throw new ApprovalWorkflowError('Verify an officer district before approval.', 'missing_district', 422);
+  }
 
   const currentProfile = await store.getProfile(request.firebase_uid);
   const previousProfile = existingRun?.previous_profile_exists === false
@@ -176,7 +176,7 @@ async function reviewAccessRequest({
     targetProfileRole: mapping.profileRole,
     previousProfileExists: currentProfile != null,
     previousProfileRole: previousProfile?.role ?? null,
-    previousAccessGranted: previousProfile?.access_granted ?? false,
+    previousAccessGranted: previousProfile?.accessGranted ?? previousProfile?.access_granted ?? false,
     previousClaimRole: currentClaims.agriwatch_role ?? null,
     previousClaimRolePresent,
     adminUid,
@@ -204,6 +204,7 @@ async function reviewAccessRequest({
       ...previousClaims,
       role: 'authenticated',
       agriwatch_role: mapping.claimRole,
+      ...(requestedRole === 'officer' ? { agriwatch_district: request.district.trim() } : {}),
     });
 
     await store.markRun(request.id, {

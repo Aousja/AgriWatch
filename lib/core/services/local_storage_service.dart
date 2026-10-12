@@ -1,11 +1,14 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class LocalStorageService {
   static late SharedPreferences _prefs;
+  static final language = ValueNotifier<String>('en');
 
   /// Initialize SharedPreferences
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    language.value = getLanguage();
   }
 
   // -----------------------------
@@ -15,6 +18,7 @@ class LocalStorageService {
   static Future<void> setLanguage(String languageCode) async {
     await _prefs.setString('language', languageCode);
     await _prefs.setBool('language_selected', true);
+    language.value = languageCode;
   }
 
   static String getLanguage() {

@@ -38,10 +38,23 @@ class AccessRequestService {
 
     final snapshot = await _requests
         .where('uid', isEqualTo: uid)
-        .orderBy('submittedAt', descending: true)
-        .limit(1)
         .get();
-    return snapshot.docs.isEmpty ? null : snapshot.docs.first.data();
+    // Filter ownership on the server; order the user's rows locally so this
+    // read does not require a composite index or a database rollout.
+    return latestOwnRequest(uid, snapshot.docs.map((doc) => doc.data()));
+  }
+
+  static Map<String, dynamic>? latestOwnRequest(
+    String uid,
+    Iterable<Map<String, dynamic>> rows,
+  ) {
+    int submittedAt(Map<String, dynamic> row) {
+      final value = row['submittedAt'];
+      return value is Timestamp ? value.millisecondsSinceEpoch : 0;
+    }
+    final own = rows.where((row) => row['uid'] == uid).toList()
+      ..sort((a, b) => submittedAt(b).compareTo(submittedAt(a)));
+    return own.isEmpty ? null : own.first;
   }
 
   Future<void> submitRequest({

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/design/app_design.dart';
 import '../models/complaint.dart';
 import 'complaint_status_badge.dart';
+import '../../../core/design/workflow_copy.dart';
 
 class ComplaintCard extends StatelessWidget {
   final Complaint complaint;
@@ -48,7 +49,7 @@ class ComplaintCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    complaint.title,
+                    WorkflowCopy.text(complaint.title),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -58,7 +59,7 @@ class ComplaintCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${complaint.ticketId}  •  ${DateFormat('dd MMM yyyy').format(complaint.createdAt)}',
+                    '${complaint.ticketId}  •  ${DateFormat(AppCopy.isUrdu ? 'yyyy/MM/dd' : 'dd MMM yyyy').format(complaint.createdAt)}',
                     style: const TextStyle(
                       color: AppDesign.muted,
                       fontSize: 12,

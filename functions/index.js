@@ -4,6 +4,7 @@ const { initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { onRequest } = require('firebase-functions/v2/https');
 const { onUserCreated } = require('firebase-functions/v2/identity');
+const { assignAuthenticatedBridgeClaim } = require('./auth-bridge');
 const {
   handleReviewRequest,
   supabaseServiceRoleKey,
@@ -19,14 +20,7 @@ initializeApp();
  * claim repeatedly is safe, so this handler is intentionally idempotent.
  */
 exports.setAuthenticatedRoleOnUserCreated = onUserCreated(async (event) => {
-  const { uid } = event.data;
-  const userRecord = await getAuth().getUser(uid);
-  const existingClaims = userRecord.customClaims ?? {};
-
-  await getAuth().setCustomUserClaims(uid, {
-    ...existingClaims,
-    role: 'authenticated',
-  });
+  await assignAuthenticatedBridgeClaim(event, getAuth());
 });
 
 /**
@@ -34,6 +28,12 @@ exports.setAuthenticatedRoleOnUserCreated = onUserCreated(async (event) => {
  * web-admin session. The browser supplies only requestId and action.
  */
 exports.reviewAccessRequest = onRequest({
+  cors: true,
+  secrets: [supabaseServiceRoleKey],
+}, handleReviewRequest);
+
+// Stage independently; deploying this name does not replace the live endpoint.
+exports.reviewAccessRequestStaging = onRequest({
   cors: true,
   secrets: [supabaseServiceRoleKey],
 }, handleReviewRequest);

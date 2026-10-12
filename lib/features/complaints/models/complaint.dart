@@ -30,6 +30,8 @@ class Complaint {
   final String? assignedOfficer;
   final String? resolutionNote;
   final bool responseFromAdmin;
+  final String? pdmaResponseNote;
+  final DateTime? pdmaRespondedAt;
   final DateTime createdAt, updatedAt;
   final List<ComplaintEvent> timeline;
 
@@ -49,6 +51,8 @@ class Complaint {
     this.assignedOfficer,
     this.resolutionNote,
     this.responseFromAdmin = false,
+    this.pdmaResponseNote,
+    this.pdmaRespondedAt,
     required this.createdAt,
     required this.updatedAt,
     required this.timeline,
@@ -94,6 +98,10 @@ class Complaint {
       assignedOfficer: row['pdma_assigned_to']?.toString(),
       resolutionNote: row['resolution_note']?.toString(),
       responseFromAdmin: row['admin_responded_at'] != null,
+      pdmaResponseNote: row['pdma_response_note']?.toString(),
+      pdmaRespondedAt: DateTime.tryParse(
+        row['pdma_responded_at']?.toString() ?? '',
+      ),
       evidenceImageUrl: row['photo_url']?.toString(),
       createdAt: createdAt,
       updatedAt: updatedAt,
@@ -116,10 +124,29 @@ class Complaint {
                 'An admin explicitly assigned this report to a verified PDMA reviewer. This does not confirm government action.',
             date: assigned,
           ),
+        if (row['pdma_review_started_at'] != null &&
+            row['pdma_review_started_by'] == row['pdma_assigned_to'] &&
+            DateTime.tryParse(row['pdma_review_started_at'].toString()) !=
+                null &&
+            assigned != null &&
+            !DateTime.parse(
+              row['pdma_review_started_at'].toString(),
+            ).isBefore(assigned))
+          ComplaintEvent(
+            title: 'PDMA review started',
+            description: 'The assigned PDMA reviewer recorded a review action.',
+            date: DateTime.parse(row['pdma_review_started_at'].toString()),
+          ),
+        if (row['pdma_responded_at'] != null)
+          ComplaintEvent(
+            title: 'PDMA response recorded',
+            description: row['pdma_response_note']?.toString() ?? '',
+            date: DateTime.tryParse(row['pdma_responded_at'].toString()),
+          ),
         if (resolved != null)
           ComplaintEvent(
             title: 'Resolution recorded',
-            description: 'An admin recorded resolution.',
+            description: 'An authorized reviewer recorded resolution.',
             date: resolved,
           ),
         if (resolved == null && rawStatus == ComplaintStatus.resolved)

@@ -87,7 +87,20 @@ test('approves officer requests with the pdma_officer mapping', async () => {
   });
   assert.equal(fake.getClaims().role, 'authenticated');
   assert.equal(fake.getClaims().agriwatch_role, 'pdma_officer');
+  assert.equal(fake.getClaims().agriwatch_district, 'Lahore');
   assert.equal(fake.getClaims().legacy_flag, true);
+});
+
+test('officer approval without a district grants nothing', async () => {
+  const fake = fakeWorkflow();
+  fake.request.district = '   ';
+  await assert.rejects(reviewAccessRequest({
+    action: 'approve', requestId: fake.request.id, adminUid: 'test-admin',
+    store: fake.store, firebaseAuth: fake.firebaseAuth,
+  }), error => error.code === 'missing_district');
+  assert.equal(fake.request.status, 'pending');
+  assert.equal(fake.getClaims().agriwatch_role, undefined);
+  assert.equal(fake.events.length, 0);
 });
 
 test('approves NGO requests with the ngo mapping', async () => {

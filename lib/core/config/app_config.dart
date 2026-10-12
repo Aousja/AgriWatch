@@ -4,12 +4,12 @@ class AppConfig {
   /// ========= DEVELOPMENT FLAGS =========
 
   // Authentication
-   /// Skip Firebase Phone OTP completely
-  static const bool useFirebaseOTP = false;
+  /// Phone sign-in uses Firebase OTP on supported builds.
+  static const bool useFirebaseOTP = true;
 
   /// During development, always start on the login screen even if a session exists.
   /// Set this to false once the app is ready for production behavior.
-  static const bool forceLoginScreenOnStartup = true;
+  static const bool forceLoginScreenOnStartup = false;
 
   // Backend
   static const bool useMockAPI = false;
@@ -26,6 +26,5 @@ class AppConfig {
   // Logging
   static const bool debugMode = true;
 
-  static const String baseUrl =
-      "http://YOUR_FASTAPI_SERVER";
+  static const String baseUrl = "http://YOUR_FASTAPI_SERVER";
 }

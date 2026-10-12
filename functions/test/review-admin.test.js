@@ -10,7 +10,7 @@ test('accepts only a valid Supabase session with existing admin membership', asy
   const calls = [];
   const request = async (path, options) => {
     calls.push({ path, options });
-    return path === '/auth/v1/user' ? { id: adminUid } : true;
+    return path === '/auth/v1/user' ? { id: adminUid } : [{ user_id: adminUid }];
   };
 
   assert.equal(await verifyWebAdmin('web-token', request), adminUid);
@@ -20,11 +20,8 @@ test('accepts only a valid Supabase session with existing admin membership', asy
       options: { headers: { Authorization: 'Bearer web-token' } },
     },
     {
-      path: '/rest/v1/rpc/agriwatch_review_web_admin_v1',
-      options: {
-        method: 'POST',
-        body: JSON.stringify({ candidate_uid: adminUid }),
-      },
+      path: `/rest/v1/admins?user_id=eq.${adminUid}&select=user_id&limit=1`,
+      options: undefined,
     },
   ]);
 });
@@ -44,7 +41,7 @@ test('rejects a missing Supabase session without querying admin membership', asy
 test('rejects a valid user absent from admins membership', async () => {
   await assert.rejects(
     verifyWebAdmin('web-token', async (path) => (
-      path === '/auth/v1/user' ? { id: adminUid, role: 'admin' } : false
+      path === '/auth/v1/user' ? { id: adminUid, role: 'admin' } : []
     )),
     { code: 'forbidden', statusCode: 403 },
   );

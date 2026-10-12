@@ -5,7 +5,8 @@ import '../../core/services/local_storage_service.dart';
 import '../auth/screens/welcome_screen.dart';
 
 class LanguageScreen extends StatefulWidget {
-  const LanguageScreen({super.key});
+  final bool returnToPrevious;
+  const LanguageScreen({super.key, this.returnToPrevious = false});
 
   @override
   State<LanguageScreen> createState() => _LanguageScreenState();
@@ -14,6 +15,14 @@ class LanguageScreen extends StatefulWidget {
 class _LanguageScreenState extends State<LanguageScreen> {
   String? selectedLanguage;
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.returnToPrevious) {
+      selectedLanguage = LocalStorageService.getLanguage();
+    }
+  }
+
   Future<void> _continue() async {
     if (selectedLanguage == null) return;
 
@@ -21,11 +30,14 @@ class _LanguageScreenState extends State<LanguageScreen> {
 
     if (!mounted) return;
 
+    if (widget.returnToPrevious) {
+      Navigator.pop(context, selectedLanguage);
+      return;
+    }
+
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => const WelcomeScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
     );
   }
 
@@ -34,6 +46,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
     const green = Color(0xFF2E7D32);
 
     return Scaffold(
+      appBar: widget.returnToPrevious ? AppBar() : null,
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -109,8 +122,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                 width: double.infinity,
                 height: 58,
                 child: ElevatedButton(
-                  onPressed:
-                      selectedLanguage == null ? null : _continue,
+                  onPressed: selectedLanguage == null ? null : _continue,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: green,
                     foregroundColor: Colors.white,
@@ -122,10 +134,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                   ),
                   child: const Text(
                     "Continue  |  جاری رکھیں",
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -156,19 +165,12 @@ class _LanguageScreenState extends State<LanguageScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 18,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(
-            color: selected
-                      ? const Color(0xFFE8F5E9)
-              : Colors.white,
+          color: selected ? const Color(0xFFE8F5E9) : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected
-                ? const Color(0xFF2E7D32)
-                : Colors.grey.shade300,
+            color: selected ? const Color(0xFF2E7D32) : Colors.grey.shade300,
             width: 2,
           ),
           boxShadow: [
@@ -187,7 +189,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
               height: 48,
               decoration: BoxDecoration(
                 color: selected
-                  ? const Color(0xFF2E7D32)
+                    ? const Color(0xFF2E7D32)
                     : const Color(0xFFE8F5E9),
                 shape: BoxShape.circle,
               ),
@@ -200,25 +202,19 @@ class _LanguageScreenState extends State<LanguageScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
                     style: TextStyle(
                       fontSize: 21,
-                      fontWeight: selected
-                          ? FontWeight.bold
-                          : FontWeight.w600,
+                      fontWeight: selected ? FontWeight.bold : FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 5),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -232,10 +228,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                       color: Color(0xFF2E7D32),
                       size: 30,
                     )
-                  : const SizedBox(
-                      key: ValueKey("unselected"),
-                      width: 30,
-                    ),
+                  : const SizedBox(key: ValueKey("unselected"), width: 30),
             ),
           ],
         ),

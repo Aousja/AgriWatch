@@ -6,15 +6,18 @@ import '../models/complaint.dart';
 import '../services/complaint_service.dart';
 import '../widgets/complaint_status_badge.dart';
 import '../widgets/complaint_timeline.dart';
+import '../../../core/design/workflow_copy.dart';
 
 class ComplaintDetailScreen extends StatefulWidget {
   final String complaintId;
   final UserProfile? profile;
+  final ComplaintService? service;
 
   const ComplaintDetailScreen({
     super.key,
     required this.complaintId,
     this.profile,
+    this.service,
   });
 
   @override
@@ -22,12 +25,13 @@ class ComplaintDetailScreen extends StatefulWidget {
 }
 
 class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
-  final _service = ComplaintService();
+  late final ComplaintService _service;
   late Future<Complaint> _future;
 
   @override
   void initState() {
     super.initState();
+    _service = widget.service ?? ComplaintService();
     _future = _service.getComplaint(widget.complaintId);
   }
 
@@ -40,10 +44,10 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Drought report details'),
+      title: Text(WorkflowCopy.text('Drought report details')),
       actions: [
         IconButton(
-          tooltip: 'Refresh status',
+          tooltip: WorkflowCopy.text('Refresh status'),
           icon: const Icon(Icons.refresh),
           onPressed: _reloadComplaint,
         ),
@@ -58,13 +62,19 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
           );
         }
         if (snapshot.hasError || !snapshot.hasData) {
-          return EmptyState(
-            icon: Icons.error_outline,
-            title: 'Could not load report',
-            message: 'Please try again.',
-            action: FilledButton(
-              onPressed: _reloadComplaint,
-              child: const Text('Try again'),
+          return Center(
+            child: SingleChildScrollView(
+              child: EmptyState(
+                icon: Icons.error_outline,
+                title: WorkflowCopy.text('Could not load report'),
+                message: WorkflowCopy.text(
+                  'Please check your connection and retry.',
+                ),
+                action: FilledButton(
+                  onPressed: _reloadComplaint,
+                  child: Text(WorkflowCopy.text('Retry')),
+                ),
+              ),
             ),
           );
         }
@@ -77,7 +87,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     padding: AppDesign.pagePadding.copyWith(top: 8, bottom: 28),
     children: [
       Text(
-        complaint.title,
+        WorkflowCopy.text(complaint.title),
         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
           color: AppDesign.ink,
           fontWeight: FontWeight.w800,
@@ -100,23 +110,23 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       ),
       const SizedBox(height: 6),
       Text(
-        'Submitted ${_date(complaint.createdAt)}',
+        '${WorkflowCopy.text('Submitted')} ${_date(complaint.createdAt)}',
         style: const TextStyle(color: AppDesign.muted),
       ),
       const SizedBox(height: 6),
       Text(
-        'Updated ${_date(complaint.updatedAt)}',
+        '${WorkflowCopy.text('Updated')} ${_date(complaint.updatedAt)}',
         style: const TextStyle(color: AppDesign.muted),
       ),
       const SizedBox(height: 6),
       Text(
-        'District: ${_districtLabel(complaint)}',
+        '${WorkflowCopy.text('District')}: ${_districtLabel(complaint)}',
         style: const TextStyle(color: AppDesign.muted),
       ),
       const SizedBox(height: 28),
-      const Text(
-        'REPORT DETAILS',
-        style: TextStyle(
+      Text(
+        WorkflowCopy.text('REPORT DETAILS'),
+        style: const TextStyle(
           color: AppDesign.muted,
           fontSize: 12,
           letterSpacing: 1,
@@ -124,10 +134,19 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         ),
       ),
       const SizedBox(height: 12),
-      _detailRow('Category', complaint.category),
+      _detailRow('Category', WorkflowCopy.text(complaint.category)),
       if (complaint.cropType.isNotEmpty)
-        _detailRow('Crop type', complaint.cropType),
+        _detailRow('Crop type', WorkflowCopy.text(complaint.cropType)),
       _detailRow('Description', complaint.description),
+      if (complaint.pdmaResponseNote?.trim().isNotEmpty == true)
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              '${WorkflowCopy.text('PDMA response')}: ${complaint.pdmaResponseNote}',
+            ),
+          ),
+        ),
       if (complaint.resolutionNote?.trim().isNotEmpty == true)
         _detailRow(
           complaint.responseFromAdmin
@@ -140,9 +159,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         _evidenceImage(complaint.evidenceImageUrl!),
       ],
       const SizedBox(height: 28),
-      const Text(
-        'TRACKING PROGRESS',
-        style: TextStyle(
+      Text(
+        WorkflowCopy.text('TRACKING PROGRESS'),
+        style: const TextStyle(
           color: AppDesign.muted,
           fontSize: 12,
           letterSpacing: 1,
@@ -153,13 +172,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       ComplaintTimeline(events: complaint.timeline),
       const SizedBox(height: 8),
       FilledButton.icon(
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Support contact will be connected soon.'),
-          ),
-        ),
+        onPressed: null,
         icon: const Icon(Icons.support_agent),
-        label: const Text('Contact Support'),
+        label: Text(WorkflowCopy.text('Support is not available in this app.')),
       ),
     ],
   );
@@ -170,7 +185,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          WorkflowCopy.text(label),
           style: const TextStyle(
             color: AppDesign.muted,
             fontSize: 12,
@@ -202,9 +217,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         height: 190,
         color: AppDesign.greenSoft,
         alignment: Alignment.center,
-        child: const Text(
-          'Evidence image unavailable',
-          style: TextStyle(color: AppDesign.muted),
+        child: Text(
+          WorkflowCopy.text('Evidence image unavailable'),
+          style: const TextStyle(color: AppDesign.muted),
         ),
       ),
     ),
@@ -215,12 +230,13 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     if (storedDistrict.isNotEmpty) return storedDistrict;
     final profileDistrict = widget.profile?.district?.trim();
     return profileDistrict == null || profileDistrict.isEmpty
-        ? 'District not set'
+        ? WorkflowCopy.text('District not set')
         : profileDistrict;
   }
 
-  String _date(DateTime value) =>
-      '${value.day} ${_months[value.month - 1]} ${value.year}';
+  String _date(DateTime value) => AppCopy.isUrdu
+      ? '${value.year}/${value.month}/${value.day}'
+      : '${value.day} ${_months[value.month - 1]} ${value.year}';
 
   static const _months = [
     'Jan',

@@ -5,10 +5,13 @@ import 'package:iconsax/iconsax.dart';
 import '../../../core/design/app_design.dart';
 import '../../auth/screens/linked_sign_in_methods_screen.dart';
 import '../../auth/screens/welcome_screen.dart';
+import '../../auth/services/firebase_auth_service.dart';
 import '../../language/language_screen.dart';
 import 'access_request_screen.dart';
 import '../models/user_profile.dart';
 import 'settings_screen.dart';
+import 'profile_edit_screen.dart';
+import '../../../core/design/workflow_copy.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserProfile? profile;
@@ -21,27 +24,57 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _notificationsEnabled = true;
+  UserProfile? _editedProfile;
+
+  UserProfile? get _profile => _editedProfile ?? widget.profile;
+
+  @override
+  void didUpdateWidget(covariant ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.profile != widget.profile) _editedProfile = null;
+  }
+
+  Future<void> _editProfile() async {
+    final profile = _profile;
+    if (profile == null) return;
+    final updated = await Navigator.push<UserProfile>(
+      context,
+      MaterialPageRoute(builder: (_) => ProfileEditScreen(profile: profile)),
+    );
+    if (!mounted || updated == null) return;
+    setState(() => _editedProfile = updated);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(WorkflowCopy.text('Profile saved'))));
+    widget.onProfileUpdated?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final displayName = _valueOr(widget.profile?.name, 'AgriWatch user');
+    final displayName = _valueOr(
+      _profile?.name,
+      WorkflowCopy.text('AgriWatch user'),
+    );
     final contact = _firstAvailable([
-      widget.profile?.phoneNumber,
-      widget.profile?.email,
+      _profile?.phoneNumber,
+      _profile?.email,
       user?.phoneNumber,
       user?.email,
-    ], fallback: 'Not provided');
-    final contactLabel = _hasValue(widget.profile?.phoneNumber) ||
-            _hasValue(user?.phoneNumber)
+    ], fallback: WorkflowCopy.text('Not provided'));
+    final contactLabel =
+        _hasValue(_profile?.phoneNumber) || _hasValue(user?.phoneNumber)
         ? 'Mobile number'
         : 'Email';
-    final district = _valueOr(widget.profile?.district, 'District not set');
-    final role = switch (widget.profile?.role) {
+    final district = _valueOr(
+      _profile?.district,
+      WorkflowCopy.text('District not set'),
+    );
+    final role = switch (_profile?.role) {
       'farmer' => 'Farmer',
       'pdma_officer' => 'PDMA Officer',
       'admin' => 'Administrator',
+      'ngo' => 'NGO / Organization',
       _ => 'Citizen',
     };
 
@@ -52,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _profileHeader(
             context,
             displayName: displayName,
-            role: role,
+            role: WorkflowCopy.text(role),
             district: district,
           ),
           Padding(
@@ -108,7 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String role,
     required String district,
   }) {
-    final photoUrl = widget.profile?.photoUrl?.trim();
+    final photoUrl = _profile?.photoUrl?.trim();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 26, 20, 28),
@@ -158,8 +191,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => _showUnavailable(context),
-                      tooltip: 'Edit profile',
+                      onPressed: _editProfile,
+                      tooltip: WorkflowCopy.text('Edit profile'),
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints.tightFor(
@@ -209,11 +242,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String district,
   }) {
     return _card([
-      _informationRow(
-        icon: Iconsax.call,
-        label: contactLabel,
-        value: contact,
-      ),
+      _informationRow(icon: Iconsax.call, label: contactLabel, value: contact),
       _informationRow(
         icon: Iconsax.location,
         label: 'District & region',
@@ -241,7 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
+                  WorkflowCopy.text(label),
                   style: const TextStyle(
                     color: AppDesign.muted,
                     fontSize: 12,
@@ -284,21 +313,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Icon(icon, color: AppDesign.greenDark, size: 19),
       ),
       title: Text(
-        title,
+        WorkflowCopy.text(title),
         style: const TextStyle(
           color: AppDesign.ink,
           fontSize: 15.5,
           fontWeight: FontWeight.w600,
         ),
       ),
-      subtitle: subtitle == null
+      subtitle:
+          (subtitle ?? (onTap == null ? 'Unavailable in this app' : null)) ==
+              null
           ? null
           : Text(
-              subtitle,
+              WorkflowCopy.text(subtitle ?? 'Unavailable in this app'),
               style: const TextStyle(color: AppDesign.muted, fontSize: 12),
             ),
-      trailing: trailing ??
-          const Icon(Icons.chevron_right, color: AppDesign.muted),
+      trailing:
+          trailing ?? const Icon(Icons.chevron_right, color: AppDesign.muted),
       onTap: onTap ?? () => _showUnavailable(context),
     );
   }
@@ -318,16 +349,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: Row(
             children: [
-              Icon(
-                Iconsax.logout,
-                color: Colors.red.shade700,
-                size: 20,
-              ),
+              Icon(Iconsax.logout, color: Colors.red.shade700, size: 20),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Sign out',
-                  style: TextStyle(
+                  WorkflowCopy.text('Sign out'),
+                  style: const TextStyle(
                     color: Colors.red,
                     fontWeight: FontWeight.w800,
                   ),
@@ -377,6 +404,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             context,
             icon: Iconsax.user_edit,
             title: 'Personal information',
+            onTap: _editProfile,
           ),
           _accountRow(
             context,
@@ -398,14 +426,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _settingsGroupLabel('Access'),
           _accountRow(
             context,
+            icon: Iconsax.refresh,
+            title: 'Refresh account access',
+            onTap: widget.onProfileUpdated,
+          ),
+          _accountRow(
+            context,
             icon: Iconsax.shield_tick,
             title: 'Request Officer/Organization Access',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const AccessRequestScreen(),
-              ),
-            ),
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AccessRequestScreen()),
+              );
+              widget.onProfileUpdated?.call();
+            },
           ),
           _settingsDivider(),
           _settingsGroupLabel('Preferences'),
@@ -413,26 +448,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
             context,
             icon: Iconsax.language_square,
             title: 'App Language',
-            trailing: _valueTrailing(AppCopy.isUrdu ? 'Urdu' : 'English'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const LanguageScreen(),
-              ),
+            trailing: _valueTrailing(
+              WorkflowCopy.text(AppCopy.isUrdu ? 'Urdu' : 'English'),
             ),
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const LanguageScreen(returnToPrevious: true),
+                ),
+              );
+              if (mounted) setState(() {});
+            },
           ),
           _accountRow(
             context,
             icon: Iconsax.notification,
             title: 'Notifications',
-            trailing: Switch.adaptive(
-              value: _notificationsEnabled,
-              onChanged: (value) =>
-                  setState(() => _notificationsEnabled = value),
-            ),
-            onTap: () => setState(
-              () => _notificationsEnabled = !_notificationsEnabled,
-            ),
+            trailing: const Switch.adaptive(value: false, onChanged: null),
           ),
           _settingsDivider(),
           _settingsGroupLabel('Security'),
@@ -447,9 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: 'Settings',
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const SettingsScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
             ),
           ),
         ],
@@ -463,10 +494,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 3),
         child: Text(
-          title.toUpperCase(),
+          WorkflowCopy.text(title).toUpperCase(),
           style: const TextStyle(
-          color: AppDesign.muted,
-          fontSize: 11,
+            color: AppDesign.muted,
+            fontSize: 11,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.7,
           ),
@@ -497,10 +528,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  List<Widget> _withDividers(
-    List<Widget> children, {
-    required double indent,
-  }) {
+  List<Widget> _withDividers(List<Widget> children, {required double indent}) {
     final items = <Widget>[];
     for (var index = 0; index < children.length; index++) {
       if (index > 0) {
@@ -513,7 +541,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _sectionTitle(String title) {
     return Text(
-      title,
+      WorkflowCopy.text(title),
       style: const TextStyle(
         color: AppDesign.ink,
         fontSize: 17,
@@ -550,12 +578,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showUnavailable(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('This option is not available yet.')),
+      SnackBar(
+        content: Text(
+          WorkflowCopy.text('This option is not available in this app.'),
+        ),
+      ),
     );
   }
 
   Future<void> _signOut(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
+    await FirebaseAuthService.instance.signOut();
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const WelcomeScreen()),

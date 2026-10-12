@@ -8,8 +8,9 @@ import '../profile/models/user_profile.dart';
 
 class HomeScreen extends StatelessWidget {
   final UserProfile? profile;
+  final VoidCallback? onProfileUpdated;
 
-  const HomeScreen({super.key, this.profile});
+  const HomeScreen({super.key, this.profile, this.onProfileUpdated});
 
   static String greetingFor(DateTime time) {
     final hour = time.toLocal().hour;
@@ -87,7 +88,10 @@ class HomeScreen extends StatelessWidget {
             ),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => ComplaintsScreen(profile: profile),
+                builder: (_) => ComplaintsScreen(
+                  profile: profile,
+                  onProfileUpdated: onProfileUpdated,
+                ),
               ),
             ),
           ),

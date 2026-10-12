@@ -6,6 +6,7 @@ import '../../shell/app_shell.dart';
 import '../../../core/services/local_storage_service.dart';
 import '../models/user_profile.dart';
 import '../services/user_profile_service.dart';
+import '../../../core/design/workflow_copy.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   final User user;
@@ -26,12 +27,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   bool get _isUrdu => LocalStorageService.getLanguage() == 'ur';
 
   Future<void> _saveProfile() async {
+    if (_isSaving) return;
     final name = _nameController.text.trim();
 
     if (name.isEmpty || _selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your name and select your role.'),
+        SnackBar(
+          content: Text(
+            WorkflowCopy.text('Please enter your name and select your role.'),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -49,12 +53,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         photoUrl: widget.user.photoURL,
         role: _selectedRole!,
         district: _districtController.text.trim().isEmpty
-          ? null
-          : _districtController.text.trim(),
+            ? null
+            : _districtController.text.trim(),
         createdAt: DateTime.now(),
       );
 
-      await _userProfileService.createProfile(profile);
+      // A retry or another session may have completed setup already.
+      // A failed read propagates to the retry state and never creates a profile.
+      final existing = await _userProfileService.fetchProfile(widget.user.uid);
+      if (existing == null) await _userProfileService.createProfile(profile);
 
       if (!mounted) return;
 
@@ -67,7 +74,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Unable to save profile: $e'),
+          content: Text(
+            WorkflowCopy.text(
+              'Unable to save profile. Your entries are kept. Please retry.',
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -89,7 +100,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile Setup'),
+        title: Text(WorkflowCopy.text('Profile Setup')),
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -106,20 +117,25 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Tell us about you',
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+              Text(
+                WorkflowCopy.text('Tell us about you'),
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
-                'This helps us personalize your AgriWatch experience.',
+                WorkflowCopy.text(
+                  'This helps us personalize your AgriWatch experience.',
+                ),
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
               ),
               const SizedBox(height: 28),
               TextField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  labelText: 'Full Name',
+                  labelText: WorkflowCopy.text('Full Name'),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -129,7 +145,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               TextField(
                 controller: _districtController,
                 decoration: InputDecoration(
-                  labelText: 'District (optional)',
+                  labelText: WorkflowCopy.text('District (optional)'),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -138,7 +154,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 24),
               Text(
                 _isUrdu ? 'اپنا کردار منتخب کریں' : 'Choose your role',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 10),
               _roleCard(
@@ -171,12 +190,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       borderRadius: BorderRadius.circular(18),
                     ),
                   ),
-                  onPressed: _isSaving || _selectedRole == null ? null : _saveProfile,
+                  onPressed: _isSaving || _selectedRole == null
+                      ? null
+                      : _saveProfile,
                   child: _isSaving
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Continue',
-                          style: TextStyle(
+                      : Text(
+                          WorkflowCopy.text('Continue'),
+                          style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
                           ),
@@ -220,9 +241,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(description, style: TextStyle(color: Colors.grey.shade700, height: 1.3)),
+                  Text(
+                    description,
+                    style: TextStyle(color: Colors.grey.shade700, height: 1.3),
+                  ),
                 ],
               ),
             ),

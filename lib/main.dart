@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'firebase_options.dart';
 
@@ -12,9 +13,7 @@ import 'features/splash/splash_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await SupabaseBridge.initialize();
 
@@ -30,13 +29,17 @@ class AgriWatchApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'AgriWatch',
-      debugShowCheckedModeBanner: false,
-      theme: AppDesign.theme(),
-      locale: Locale(LocalStorageService.getLanguage()),
-      supportedLocales: const [Locale('en'), Locale('ur')],
-      home: const SplashScreen(),
+    return ValueListenableBuilder<String>(
+      valueListenable: LocalStorageService.language,
+      builder: (context, language, _) => MaterialApp(
+        title: 'AgriWatch',
+        debugShowCheckedModeBanner: false,
+        theme: AppDesign.theme(),
+        locale: Locale(language),
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        supportedLocales: const [Locale('en'), Locale('ur')],
+        home: const SplashScreen(),
+      ),
     );
   }
 }

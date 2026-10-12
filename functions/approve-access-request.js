@@ -1,6 +1,7 @@
 'use strict';
 
 const { getAuth } = require('firebase-admin/auth');
+const { getFirestore } = require('firebase-admin/firestore');
 const { defineSecret } = require('firebase-functions/params');
 const {
   ApprovalWorkflowError,
@@ -48,114 +49,78 @@ function encode(value) {
   return encodeURIComponent(value);
 }
 
-function createStore() {
-  const selectRequest = [
-    'id', 'firebase_uid', 'name', 'role', 'district', 'phone', 'status',
-    'organization_name', 'designation', 'reason', 'official_email',
-  ].join(',');
+function firestoreRequest(snapshot) {
+  if (!snapshot.exists) return null;
+  const row = snapshot.data();
+  return { ...row, id: `firestore:${snapshot.id}`, firebase_uid: row.uid,
+    name: row.fullName, role: row.requestedRole, official_email: row.officialEmail,
+    organization_name: row.organizationName,
+    submitted_at: row.submittedAt?.toDate?.().toISOString() || null };
+}
 
+function createStore(db = getFirestore(), request = supabaseRequest) {
+  const runRef = id => db.collection('trusted_access_review_runs').doc(id.replace(':', '_'));
+  const isFirestore = id => id.startsWith('firestore:');
+  const requestRef = id => db.collection('access_requests').doc(id.slice('firestore:'.length));
   return {
-    async getRequest(requestId) {
-      const rows = await supabaseRequest(
-        `/rest/v1/access_requests?id=eq.${encode(requestId)}&select=${selectRequest}&limit=1`,
-      );
+    async getRequest(id) {
+      if (isFirestore(id)) return firestoreRequest(await requestRef(id).get());
+      const rows = await request(`/rest/v1/access_requests?id=eq.${encode(id)}&select=*&limit=1`);
       return rows[0] || null;
     },
-
-    async getProfile(firebaseUid) {
-      const rows = await supabaseRequest(
-        `/rest/v1/mobile_firebase_profiles?firebase_uid=eq.${encode(firebaseUid)}&select=*&limit=1`,
-      );
-      return rows[0] || null;
+    async getProfile(uid) {
+      const row = await db.collection('user_profiles').doc(uid).get();
+      return row.exists ? row.data() : null;
     },
-
-    async getRun(requestId) {
-      const rows = await supabaseRequest(
-        `/rest/v1/access_request_approval_runs?request_id=eq.${encode(requestId)}&select=*&limit=1`,
-      );
-      return rows[0] || null;
+    async getRun(id) {
+      const row = await runRef(id).get();
+      return row.exists ? row.data() : null;
     },
-
     async beginRun(run) {
-      const existing = await this.getRun(run.requestId);
-      await supabaseRequest('/rest/v1/access_request_approval_runs?on_conflict=request_id', {
-        method: 'POST',
-        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify({
-          request_id: run.requestId,
-          firebase_uid: run.firebaseUid,
-          requested_role: run.requestedRole,
-          target_profile_role: run.targetProfileRole,
-          state: 'processing',
-          attempt_count: (existing?.attempt_count || 0) + 1,
-          previous_profile_exists: run.previousProfileExists,
-          previous_profile_role: run.previousProfileRole,
+      await db.runTransaction(async tx => {
+        const ref = runRef(run.requestId);
+        const prior = await tx.get(ref);
+        const state = prior.data();
+        if (['processing', 'recovery_required'].includes(state?.state)) {
+          throw new ApprovalWorkflowError('Interrupted approval requires operator reconciliation.', 'recovery_required', 409);
+        }
+        if (['granted', 'rejected'].includes(state?.state)) {
+          throw new ApprovalWorkflowError('Request already reviewed.', 'request_not_pending', 409);
+        }
+        tx.set(ref, {
+          request_id: run.requestId, firebase_uid: run.firebaseUid,
+          state: 'processing', approved_by: run.adminUid,
+          attempt_count: (state?.attempt_count || 0) + 1,
+          previous_profile_exists: run.previousProfileExists ?? false,
+          previous_profile_role: run.previousProfileRole ?? null,
           previous_access_granted: run.previousAccessGranted ?? false,
-          previous_claim_role: run.previousClaimRole,
-          previous_claim_role_present: run.previousClaimRolePresent,
-          approved_by: run.adminUid,
-          started_at: new Date().toISOString(),
-          last_error: null,
-        }),
+          previous_claim_role: run.previousClaimRole ?? null,
+          previous_claim_role_present: run.previousClaimRolePresent ?? false,
+          started_at: new Date().toISOString(), last_error: null,
+        });
       });
     },
-
-    async markRun(requestId, update) {
-      const body = {};
-      if (update.state) body.state = update.state;
-      if (update.grantedAt) body.granted_at = update.grantedAt;
-      if (update.lastError) body.last_error = update.lastError;
-      await supabaseRequest(
-        `/rest/v1/access_request_approval_runs?request_id=eq.${encode(requestId)}`,
-        {
-          method: 'PATCH',
-          headers: { Prefer: 'return=minimal' },
-          body: JSON.stringify(body),
-        },
-      );
+    async markRun(id, update) {
+      await runRef(id).update({ state: update.state,
+        ...(update.grantedAt ? { granted_at: update.grantedAt } : {}),
+        ...(update.lastError ? { last_error: update.lastError } : {}) });
     },
-
-    async setRequestStatus(requestId, status) {
-      await supabaseRequest(`/rest/v1/access_requests?id=eq.${encode(requestId)}`, {
-        method: 'PATCH',
-        headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ status }),
-      });
+    async setRequestStatus(id, status) {
+      if (isFirestore(id)) await requestRef(id).update({ status });
+      else await request(`/rest/v1/access_requests?id=eq.${encode(id)}`, {
+        method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status }) });
     },
-
-    async upsertProfile(request) {
-      await supabaseRequest('/rest/v1/mobile_firebase_profiles?on_conflict=firebase_uid', {
-        method: 'POST',
-        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify({
-          firebase_uid: request.firebase_uid,
-          name: request.name,
-          phone_number: request.phone,
-          email: request.official_email,
-          district: request.district,
-          role: request.role,
-          access_granted: request.access_granted,
-        }),
-      });
+    async upsertProfile(row) {
+      await db.collection('user_profiles').doc(row.firebase_uid).set({
+        uid: row.firebase_uid, role: row.role, accessGranted: row.access_granted,
+      }, { merge: true });
     },
-
-    async restoreProfile(firebaseUid, profile) {
-      await supabaseRequest(`/rest/v1/mobile_firebase_profiles?firebase_uid=eq.${encode(firebaseUid)}`, {
-        method: 'PATCH',
-        headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({
-          role: profile.role,
-          access_granted: profile.access_granted ?? false,
-        }),
-      });
+    async restoreProfile(uid, profile) {
+      await db.collection('user_profiles').doc(uid).set({
+        role: profile.role || 'citizen', accessGranted: profile.accessGranted ?? profile.access_granted ?? false,
+      }, { merge: true });
     },
-
-    async deleteProfile(firebaseUid) {
-      await supabaseRequest(`/rest/v1/mobile_firebase_profiles?firebase_uid=eq.${encode(firebaseUid)}`, {
-        method: 'DELETE',
-        headers: { Prefer: 'return=minimal' },
-      });
-    },
+    async deleteProfile(uid) { await db.collection('user_profiles').doc(uid).delete(); },
   };
 }
 
@@ -173,7 +138,7 @@ function createFirebaseAuthAdapter() {
 }
 
 async function handleReviewRequest(req, res) {
-  if (req.method !== 'POST') {
+  if (!['GET', 'POST'].includes(req.method)) {
     res.status(405).json({ error: 'method_not_allowed' });
     return;
   }
@@ -186,14 +151,19 @@ async function handleReviewRequest(req, res) {
       return;
     }
 
+    const adminUid = await verifyWebAdmin(accessToken, supabaseRequest);
+    if (req.method === 'GET') {
+      const rows = await getFirestore().collection('access_requests').orderBy('submittedAt', 'desc').limit(200).get();
+      res.status(200).json({ requests: rows.docs.map(firestoreRequest) });
+      return;
+    }
     const requestId = req.body?.requestId;
     const action = req.body?.action;
-    if (typeof requestId !== 'string' || !/^[0-9a-f-]{36}$/i.test(requestId)) {
+    if (typeof requestId !== 'string' || !/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|firestore:[A-Za-z0-9_-]{1,128})$/i.test(requestId)) {
       res.status(400).json({ error: 'invalid_request_id' });
       return;
     }
 
-    const adminUid = await verifyWebAdmin(accessToken, supabaseRequest);
     const result = await reviewAccessRequest({
       action,
       requestId,
@@ -206,9 +176,9 @@ async function handleReviewRequest(req, res) {
     const statusCode = error instanceof ApprovalWorkflowError ? error.statusCode : 500;
     res.status(statusCode).json({
       error: error.code || 'approval_failed',
-      message: error.message,
+      message: error instanceof ApprovalWorkflowError ? error.message : 'Review service failed. No successful approval is confirmed.',
     });
   }
 }
 
-module.exports = { handleReviewRequest, supabaseServiceRoleKey };
+module.exports = { createStore, firestoreRequest, handleReviewRequest, supabaseServiceRoleKey };

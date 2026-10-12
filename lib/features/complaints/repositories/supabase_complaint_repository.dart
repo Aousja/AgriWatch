@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/supabase_config.dart';
+import '../../../core/services/linked_account_gateway.dart';
 import '../../profile/models/user_profile.dart';
 import '../models/complaint.dart';
 import '../models/report_categories.dart';
@@ -16,12 +17,18 @@ class SupabaseComplaintRepository implements ComplaintRepository {
   SupabaseComplaintRepository({
     this.profile,
     this.clientOverride,
+    this.linkedGatewayOverride,
     FirebaseAuth? auth,
   }) : _auth = auth ?? FirebaseAuth.instance;
 
   final UserProfile? profile;
   final SupabaseClient? clientOverride;
   final FirebaseAuth _auth;
+  final LinkedAccountGateway? linkedGatewayOverride;
+  late final LinkedAccountGateway _linkedGateway = linkedGatewayOverride ?? LinkedAccountGateway(
+    currentUid: () => _auth.currentUser?.uid,
+    token: () async => _auth.currentUser?.getIdToken(false),
+  );
 
   SupabaseClient get client {
     if (!SupabaseConfig.isConfigured && clientOverride == null) {
@@ -39,6 +46,11 @@ class SupabaseComplaintRepository implements ComplaintRepository {
   @override
   Future<List<Complaint>> getComplaints() async {
     final owner = uid;
+    final linked = await _linkedGateway.account();
+    if (linked != null) {
+      return (linked['reports'] as List).cast<Map<String, dynamic>>()
+          .map(Complaint.fromSupabase).toList();
+    }
     late final List<Map<String, dynamic>> rows;
     try {
       rows = await client
@@ -96,6 +108,13 @@ class SupabaseComplaintRepository implements ComplaintRepository {
   @override
   Future<Complaint> getComplaint(String complaintId) async {
     final owner = uid;
+    final linked = await _linkedGateway.account();
+    if (linked != null) {
+      final rows = (linked['reports'] as List).cast<Map<String, dynamic>>();
+      final matches = rows.where((row) => row['id'] == complaintId);
+      if (matches.isEmpty) throw StateError('Complaint not found.');
+      return Complaint.fromSupabase(matches.single);
+    }
     final row = await client
         .from('complaints')
         .select()

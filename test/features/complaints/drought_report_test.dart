@@ -5,8 +5,14 @@ import 'package:agriwatch/features/complaints/widgets/complaint_card.dart';
 import 'package:agriwatch/features/complaints/models/complaint.dart';
 import 'package:agriwatch/features/complaints/models/complaint_status.dart';
 import 'package:agriwatch/features/complaints/models/report_categories.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:agriwatch/core/services/local_storage_service.dart';
 
 void main() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({'language': 'en'});
+    await LocalStorageService.init();
+  });
   final legacy = <String, dynamic>{
     'id': 'legacy-row',
     'ref': 'CMP-7A1E716B604A',
@@ -56,6 +62,37 @@ void main() {
       expect(report.timeline.where((e) => e.date != null), hasLength(1));
     },
   );
+
+  test('PDMA response survives reload and stale review is not current', () {
+    final row = {
+      ...legacy,
+      'pdma_assigned_to': 'new-reviewer',
+      'pdma_assigned_at': '2026-10-09T12:00:00Z',
+      'pdma_review_started_by': 'previous-reviewer',
+      'pdma_review_started_at': '2026-10-09T11:00:00Z',
+      'pdma_response_note': 'Water shortage verified.',
+      'pdma_responded_at': '2026-10-09T11:30:00Z',
+    };
+    final reloaded = Complaint.fromSupabase(row);
+    expect(reloaded.pdmaResponseNote, 'Water shortage verified.');
+    expect(
+      reloaded.timeline.any((e) => e.title == 'PDMA review started'),
+      isFalse,
+    );
+    expect(
+      reloaded.timeline.any((e) => e.title == 'PDMA response recorded'),
+      isTrue,
+    );
+    final reviewed = Complaint.fromSupabase({
+      ...row,
+      'pdma_review_started_by': 'new-reviewer',
+      'pdma_review_started_at': '2026-10-09T12:01:00Z',
+    });
+    expect(
+      reviewed.timeline.any((e) => e.title == 'PDMA review started'),
+      isTrue,
+    );
+  });
 
   testWidgets('new categories and long tracking labels fit a narrow phone', (
     tester,

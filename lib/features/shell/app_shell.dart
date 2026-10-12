@@ -11,6 +11,7 @@ import '../profile/models/user_profile.dart';
 import '../profile/screens/profile_screen.dart';
 import '../profile/services/user_profile_service.dart';
 import 'shell_profile_view.dart';
+import '../../core/services/local_storage_service.dart';
 
 class AppShell extends StatefulWidget {
   final Future<UserProfile?> Function(bool forceRefresh)? profileLoader;
@@ -125,50 +126,59 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ShellProfileView(
-        key: ValueKey(_accountUid),
-        future: _profileFuture,
-        onRetry: () => _refreshProfile(forceRefresh: true, reason: 'retry'),
-        builder: (profile) {
-          final pages = [
-            HomeScreen(profile: profile),
-            const AlertsScreen(),
-            ComplaintsScreen(profile: profile),
-            ProfileScreen(
-              profile: profile,
-              onProfileUpdated: () => _refreshProfile(forceRefresh: true),
+    return ValueListenableBuilder<String>(
+      valueListenable: LocalStorageService.language,
+      builder: (context, language, _) => Scaffold(
+        body: ShellProfileView(
+          key: ValueKey(_accountUid),
+          future: _profileFuture,
+          onRetry: () => _refreshProfile(forceRefresh: true, reason: 'retry'),
+          builder: (profile) {
+            final pages = [
+              HomeScreen(
+                profile: profile,
+                onProfileUpdated: () => _refreshProfile(),
+              ),
+              const AlertsScreen(),
+              ComplaintsScreen(
+                profile: profile,
+                onProfileUpdated: () => _refreshProfile(),
+              ),
+              ProfileScreen(
+                profile: profile,
+                onProfileUpdated: () => _refreshProfile(forceRefresh: true),
+              ),
+            ];
+            return IndexedStack(index: _selectedIndex, children: pages);
+          },
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (index) =>
+              setState(() => _selectedIndex = index),
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Iconsax.home_2),
+              selectedIcon: const Icon(Iconsax.home_25),
+              label: AppCopy.text('Home', 'ہوم'),
             ),
-          ];
-          return IndexedStack(index: _selectedIndex, children: pages);
-        },
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) =>
-            setState(() => _selectedIndex = index),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Iconsax.home_2),
-            selectedIcon: const Icon(Iconsax.home_25),
-            label: AppCopy.text('Home', 'ہوم'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Iconsax.notification),
-            selectedIcon: const Icon(Iconsax.notification5),
-            label: AppCopy.text('Alerts', 'انتباہات'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Iconsax.note_text),
-            selectedIcon: const Icon(Iconsax.note_215),
-            label: AppCopy.text('Drought reports', 'خشک سالی کی رپورٹس'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Iconsax.profile_circle),
-            selectedIcon: const Icon(Iconsax.profile_circle5),
-            label: AppCopy.text('Profile', 'پروفائل'),
-          ),
-        ],
+            NavigationDestination(
+              icon: const Icon(Iconsax.notification),
+              selectedIcon: const Icon(Iconsax.notification5),
+              label: AppCopy.text('Alerts', 'انتباہات'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Iconsax.note_text),
+              selectedIcon: const Icon(Iconsax.note_215),
+              label: AppCopy.text('Drought reports', 'خشک سالی کی رپورٹس'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Iconsax.profile_circle),
+              selectedIcon: const Icon(Iconsax.profile_circle5),
+              label: AppCopy.text('Profile', 'پروفائل'),
+            ),
+          ],
+        ),
       ),
     );
   }

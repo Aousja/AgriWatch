@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/design/app_design.dart';
+import '../../../core/design/workflow_copy.dart';
 
 class ComplaintSummaryCard extends StatelessWidget {
   final int active, attention;
@@ -35,18 +36,18 @@ class ComplaintSummaryCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Active drought reports',
-          style: TextStyle(
+        Text(
+          WorkflowCopy.text('Active drought reports'),
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 5),
-        const Text(
-          'Track recorded updates to your reports.',
-          style: TextStyle(color: Colors.white70),
+        Text(
+          WorkflowCopy.text('Track recorded updates to your reports.'),
+          style: const TextStyle(color: Colors.white70),
         ),
         const SizedBox(height: 18),
         Row(
@@ -71,7 +72,10 @@ class ComplaintSummaryCard extends StatelessWidget {
           fontWeight: FontWeight.w800,
         ),
       ),
-      Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+      Text(
+        WorkflowCopy.text(label),
+        style: const TextStyle(color: Colors.white70, fontSize: 12),
+      ),
     ],
   );
 }

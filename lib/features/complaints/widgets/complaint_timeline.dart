@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/design/app_design.dart';
 import '../models/complaint.dart';
+import '../../../core/design/workflow_copy.dart';
 
 class ComplaintTimeline extends StatelessWidget {
   final List<ComplaintEvent> events;
@@ -67,7 +68,7 @@ class ComplaintTimeline extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    event.title,
+                    WorkflowCopy.text(event.title),
                     style: TextStyle(
                       color: AppDesign.ink,
                       fontWeight: FontWeight.w800,
@@ -76,14 +77,21 @@ class ComplaintTimeline extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    event.description,
+                    // Reviewer responses remain verbatim; only generated copy is translated.
+                    event.title == 'PDMA response recorded'
+                        ? event.description
+                        : WorkflowCopy.text(event.description),
                     style: const TextStyle(color: AppDesign.muted, height: 1.3),
                   ),
                   if (event.date != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 5),
                       child: Text(
-                        DateFormat('dd MMM yyyy, hh:mm a').format(event.date!),
+                        DateFormat(
+                          AppCopy.isUrdu
+                              ? 'yyyy/MM/dd HH:mm'
+                              : 'dd MMM yyyy, hh:mm a',
+                        ).format(event.date!),
                         style: const TextStyle(
                           color: AppDesign.green,
                           fontSize: 12,

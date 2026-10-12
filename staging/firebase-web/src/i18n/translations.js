@@ -1,0 +1,253 @@
+// Flat key -> { en, ur } translation map.
+// Covers the app shell (nav, login, home, guest view) — the parts every
+// role sees first. Dashboard data tables (dummy satellite/crop data) stay
+// English for now since that content will come from the real backend later.
+
+const dict = {
+  // Common
+  tagline: { en: "Watch · Predict · Protect", ur: "نگرانی · پیش گوئی · تحفظ" },
+  login: { en: "Log in", ur: "لاگ ان" },
+  viewAsGuest: { en: "View as guest", ur: "بطور مہمان دیکھیں" },
+  exitToHome: { en: "Exit to Home", ur: "ہوم پیج پر جائیں" },
+  searchDistrict: { en: "Search district...", ur: "ضلع تلاش کریں..." },
+
+  // Sidebar role labels
+  roleAdmin: { en: "Pakistan · PDMA", ur: "پاکستان · پی ڈی ایم اے" },
+  roleFarmer: { en: "Farmer Portal", ur: "کسان پورٹل" },
+  rolePublic: { en: "Public Portal", ur: "عوامی پورٹل" },
+
+  // Admin nav
+  navOverview: { en: "Overview", ur: "جائزہ" },
+  navDroughtMap: { en: "Drought Map", ur: "خشک سالی نقشہ" },
+  navPredictions: { en: "Predictions", ur: "پیش گوئیاں" },
+  navAlerts: { en: "Alerts", ur: "اطلاعات" },
+  navUsers: { en: "Users", ur: "صارفین" },
+  navVerifications: { en: "Verifications", ur: "تصدیقات" },
+  navComplaints: { en: "Drought Reports", ur: "خشک سالی کی رپورٹس" },
+  navReports: { en: "Reports", ur: "رپورٹس" },
+  navPublicRegistrations: { en: "Public Registrations", ur: "عوامی رجسٹریشن" },
+  navMobileRequests: { en: "Access Requests", ur: "رسائی کی درخواستیں" },
+  navSettings: { en: "Settings", ur: "ترتیبات" },
+  navReportIssue: { en: "Report an Issue", ur: "مسئلہ رپورٹ کریں" },
+  navSubmitReport: { en: "Report Drought Situation", ur: "خشک سالی کی صورتحال رپورٹ کریں" },
+
+  // Farmer nav
+  navHome: { en: "Home", ur: "ہوم" },
+  navCropRecommendations: { en: "Crop Recommendations", ur: "فصل کی تجاویز" },
+  navIrrigationScheduler: { en: "Irrigation Scheduler", ur: "آبپاشی شیڈول" },
+  navYieldRisk: { en: "Yield Risk", ur: "پیداواری خطرہ" },
+  navCropCalendar: { en: "Crop Calendar", ur: "فصل کیلنڈر" },
+
+  // Public nav
+  navRegionalMap: { en: "Regional Map", ur: "علاقائی نقشہ" },
+  navCompare: { en: "Compare Districts", ur: "اضلاع کا موازنہ" },
+  navAwareness: { en: "Awareness & Tips", ur: "آگاہی اور تجاویز" },
+  navCommunityReports: { en: "Community Reports", ur: "کمیونٹی رپورٹس" },
+
+  // Login page
+  loginIAmA: { en: "I am a", ur: "میں ہوں ایک" },
+  roleFarmerLabel: { en: "Farmer", ur: "کسان" },
+  rolePublicLabel: { en: "General Public", ur: "عام شہری" },
+  roleAdminLabel: { en: "PDMA Officer", ur: "پی ڈی ایم اے افسر" },
+  phoneNumber: { en: "Phone Number", ur: "فون نمبر" },
+  phonePlaceholder: { en: "+92 3XX XXXXXXX", ur: "+92 3XX XXXXXXX" },
+  sendOtp: { en: "Send OTP", ur: "او ٹی پی بھیجیں" },
+  adminApprovalNote: { en: "PDMA officer access requires prior approval by an admin.", ur: "پی ڈی ایم اے افسر تک رسائی کے لیے ایڈمن کی پیشگی منظوری درکار ہے۔" },
+  enterOtp: { en: "Enter OTP", ur: "او ٹی پی درج کریں" },
+  otpPlaceholder: { en: "6-digit code", ur: "6 ہندسوں کا کوڈ" },
+  codeSentTo: { en: "Code sent to", ur: "کوڈ بھیجا گیا" },
+  verifyContinueAs: { en: "Verify & Continue as", ur: "تصدیق کریں اور جاری رکھیں بطور" },
+  continueAsGuest: { en: "Continue browsing as guest", ur: "بطور مہمان جاری رکھیں" },
+
+  // Home page
+  fypLabel: { en: "GeoAI Drought Monitoring · Final Year Project", ur: "جیو اے آئی خشک سالی نگرانی · فائنل ایئر پراجیکٹ" },
+  heroHeadline1: { en: "Drought is detectable weeks in advance.", ur: "خشک سالی کا پتہ ہفتوں پہلے لگایا جا سکتا ہے۔" },
+  heroHeadline2: { en: "Pakistan's farmers weren't being told.", ur: "پاکستان کے کسانوں کو بروقت نہیں بتایا جا رہا تھا۔" },
+  heroBody: {
+    en: "AgriWatch Pakistan turns satellite data into district-level drought forecasts, then puts that forecast directly in the hands of the people who need it — in Urdu, on a low-end phone, weeks before the water runs out.",
+    ur: "ایگری واچ پاکستان سیٹلائٹ ڈیٹا کو ضلعی سطح کی خشک سالی پیش گوئیوں میں بدلتا ہے، اور یہ پیش گوئی براہ راست ان لوگوں تک پہنچاتا ہے جنہیں اس کی ضرورت ہے — اردو میں، ایک عام موبائل فون پر، پانی ختم ہونے سے ہفتوں پہلے۔",
+  },
+  openDashboard: { en: "Open Dashboard", ur: "ڈیش بورڈ کھولیں" },
+  previewNoAccount: { en: "Preview without an account", ur: "بغیر اکاؤنٹ کے دیکھیں" },
+  liveSatellitePass: { en: "LIVE SATELLITE PASS · every 10 days", ur: "لائیو سیٹلائٹ گزر · ہر 10 دن بعد" },
+  districtsMonitoredStrip: { en: "12 districts · 4 provinces monitored", ur: "12 اضلاع · 4 صوبے زیرِ نگرانی" },
+
+  problemLabel: { en: "The problem", ur: "مسئلہ" },
+  statGdp: { en: "of Pakistan's GDP from agriculture", ur: "پاکستان کی جی ڈی پی زراعت سے حاصل ہوتی ہے" },
+  statWorkforce: { en: "of the workforce employed in it", ur: "افرادی قوت اسی شعبے میں کام کرتی ہے" },
+  statVulnerable: { en: "most climate-vulnerable countries", ur: "موسمیاتی طور پر کمزور ترین ممالک میں شامل" },
+  problemBody: {
+    en: "Wheat, cotton, sugarcane, and rice farmers face recurring drought that satellite data can flag weeks ahead — yet no unified district-level system detects it, communicates it, and guides them through it. PakDMS has no farmer interface. Global platforms need paid subscriptions and skip Urdu. PDMA offices still run on manual PDF reports.",
+    ur: "گندم، کپاس، گنے اور چاول کے کسانوں کو بار بار خشک سالی کا سامنا رہتا ہے جسے سیٹلائٹ ڈیٹا ہفتوں پہلے ظاہر کر سکتا ہے — مگر کوئی مربوط ضلعی نظام اسے پہچان کر آگاہ نہیں کرتا۔ PakDMS میں کسانوں کے لیے کوئی انٹرفیس نہیں۔ عالمی پلیٹ فارمز میں ادائیگی درکار ہے اور اردو شامل نہیں۔ PDMA کے دفاتر اب بھی دستی PDF رپورٹس پر چلتے ہیں۔",
+  },
+
+  solutionLabel: { en: "The solution", ur: "حل" },
+  solutionHeading: { en: "One system, three connected platforms", ur: "ایک نظام، تین منسلک پلیٹ فارمز" },
+  platformWebTitle: { en: "Web Admin Dashboard", ur: "ویب ایڈمن ڈیش بورڈ" },
+  platformWebBody: { en: "GIS monitoring, alert dispatch, and explicitly assigned drought reports for verified PDMA reviewers.", ur: "PDMA افسران کے لیے مکمل GIS نگرانی، اطلاعات کی ترسیل اور شکایات کا انتظام۔" },
+  platformMobileAdminTitle: { en: "Mobile Admin Panel", ur: "موبائل ایڈمن پینل" },
+  platformMobileAdminBody: { en: "Lightweight Flutter interface giving officers the same critical controls on the go.", ur: "ایک ہلکا پھلکا ایپ انٹرفیس جو افسران کو چلتے پھرتے وہی اہم اختیارات فراہم کرتا ہے۔" },
+  platformMobileAppTitle: { en: "Bilingual Mobile App", ur: "دو لسانی موبائل ایپ" },
+  platformMobileAppBody: { en: "English & Urdu app for Farmers and the General Public, built for rural 3G networks.", ur: "کسانوں اور عوام کے لیے انگریزی و اردو ایپ، دیہی 3G نیٹ ورکس کے لیے بنائی گئی۔" },
+
+  getStartedLabel: { en: "Get started", ur: "شروع کریں" },
+  getStartedHeading: { en: "Every dashboard built for who's using it", ur: "ہر ڈیش بورڈ اپنے استعمال کنندہ کے لیے بنایا گیا" },
+  cardFarmerTitle: { en: "Farmer", ur: "کسان" },
+  cardFarmerBody: { en: "Crop-specific advice, an irrigation scheduler, yield risk scoring, and drought situation reporting to AgriWatch admins.", ur: "فصل کے مطابق مشورے، آبپاشی شیڈول، پیداواری خطرے کا اندازہ، اور نقصان کی شکایت درج کرانے کا براہ راست ذریعہ۔" },
+  cardPublicTitle: { en: "General Public", ur: "عام شہری" },
+  cardPublicBody: { en: "Regional drought alerts, awareness content, and read-only risk maps for citizens, students, and NGOs.", ur: "شہریوں، طلبہ اور این جی اوز کے لیے علاقائی خشک سالی کی اطلاعات، آگاہی مواد، اور صرف دیکھنے کے قابل نقشے۔" },
+  cardAdminTitle: { en: "Admin / PDMA", ur: "ایڈمن / پی ڈی ایم اے" },
+  cardAdminBody: { en: "District-level monitoring, alert dispatch, and automated PDF situation reports — replacing manual paperwork.", ur: "ضلعی سطح کی نگرانی، اطلاعات کی ترسیل، اور خودکار PDF رپورٹس — دستی کاغذی کارروائی کا متبادل۔" },
+  continueCta: { en: "Continue", ur: "جاری رکھیں" },
+
+  featurePrecisionTitle: { en: "District-level precision", ur: "ضلعی سطح کی درستگی" },
+  featurePrecisionBody: { en: "Every tehsil in Punjab, Sindh, Balochistan & KP, tracked individually.", ur: "پنجاب، سندھ، بلوچستان اور خیبر پختونخوا کی ہر تحصیل الگ الگ ٹریک کی جاتی ہے۔" },
+  featureCommTitle: { en: "Two-way communication", ur: "دو طرفہ رابطہ" },
+  featureCommBody: { en: "Farmers report drought situations; AgriWatch admins review and respond, with explicit PDMA review assignments when appropriate.", ur: "کسان نقصان کی رپورٹ درج کرتے ہیں؛ PDMA افسران ایک ہی جگہ جواب دیتے ہیں۔" },
+  featureUrduTitle: { en: "Built for rural Pakistan", ur: "دیہی پاکستان کے لیے تیار" },
+  featureUrduBody: { en: "Full Urdu RTL support, optimized for 3G, free to use.", ur: "مکمل اردو سپورٹ، 3G کے لیے بہتر بنایا گیا، اور مفت استعمال کے لیے۔" },
+
+  footerProject: { en: "AgriWatch Pakistan — Final Year Project", ur: "ایگری واچ پاکستان — فائنل ایئر پراجیکٹ" },
+
+  // Guest dashboard
+  guestView: { en: "Guest View", ur: "مہمان کا منظر" },
+  registerFree: { en: "Register free", ur: "مفت رجسٹر کریں" },
+  publicPreview: { en: "Public preview", ur: "عوامی جھلک" },
+  nationalOverview: { en: "National drought overview — no account needed", ur: "قومی خشک سالی کا جائزہ — اکاؤنٹ کی ضرورت نہیں" },
+  registerForAlerts: { en: "Register for alerts & personalized advice", ur: "اطلاعات اور ذاتی مشورے کے لیے رجسٹر کریں" },
+  districtsMonitored: { en: "Districts Monitored", ur: "زیرِ نگرانی اضلاع" },
+  extremeDistricts: { en: "Extreme Drought Districts", ur: "شدید خشک سالی والے اضلاع" },
+  lastUpdated: { en: "Last Updated", ur: "آخری تازہ کاری" },
+  lockedFeatureText: { en: "Personalized alerts, crop advice & drought reporting are for registered users", ur: "ذاتی اطلاعات، فصل کے مشورے اور خشک سالی کی صورتحال رپورٹ کرنا صرف رجسٹرڈ صارفین کے لیے ہے" },
+  lockedFeatureSub: { en: "Free for Farmers and the General Public — takes under a minute.", ur: "کسانوں اور عوام کے لیے مفت — ایک منٹ سے بھی کم وقت لگتا ہے۔" },
+  registerNow: { en: "Register now", ur: "ابھی رجسٹر کریں" },
+
+  // Signup flow
+  signUp: { en: "Sign Up", ur: "سائن اپ" },
+  createAccount: { en: "Create Account", ur: "اکاؤنٹ بنائیں" },
+  alreadyHaveAccount: { en: "Already have an account?", ur: "پہلے سے اکاؤنٹ ہے؟" },
+  newHereSignUp: { en: "New here?", ur: "نئے صارف ہیں؟" },
+  continueBtn: { en: "Continue", ur: "جاری رکھیں" },
+  back: { en: "Back", ur: "واپس" },
+  signupFarmerDetails: { en: "Tell us about your farm", ur: "اپنی زمین کے بارے میں بتائیں" },
+  signupPublicDetails: { en: "A few last details", ur: "چند آخری تفصیلات" },
+  signupAdminDetails: { en: "Officer details", ur: "افسر کی تفصیلات" },
+  fieldDistrict: { en: "District", ur: "ضلع" },
+  fieldTehsil: { en: "Tehsil", ur: "تحصیل" },
+  fieldTehsilPlaceholder: { en: "e.g. Ahmedpur East", ur: "مثلاً احمد پور شرقیہ" },
+  fieldPrimaryCrop: { en: "Primary Crop", ur: "بنیادی فصل" },
+  fieldFarmSize: { en: "Approximate Farm Size", ur: "زمین کا تخمینی رقبہ" },
+  fieldFarmSizePlaceholder: { en: "e.g. 8 acres", ur: "مثلاً 8 ایکڑ" },
+  fieldFullName: { en: "Full Name (optional)", ur: "پورا نام (اختیاری)" },
+  fieldFullNamePlaceholder: { en: "Your name", ur: "آپ کا نام" },
+  fieldLanguagePref: { en: "Language Preference", ur: "زبان کی ترجیح" },
+  fieldDesignation: { en: "Designation", ur: "عہدہ" },
+  fieldDesignationPlaceholder: { en: "e.g. District Coordinator", ur: "مثلاً ضلعی کوآرڈینیٹر" },
+  fieldAssignedDistrict: { en: "Assigned District", ur: "تعینات ضلع" },
+  cropWheat: { en: "Wheat", ur: "گندم" },
+  cropCotton: { en: "Cotton", ur: "کپاس" },
+  cropSugarcane: { en: "Sugarcane", ur: "گنا" },
+  cropRice: { en: "Rice", ur: "چاول" },
+  cropOther: { en: "Other", ur: "دیگر" },
+  selectOption: { en: "Select...", ur: "منتخب کریں..." },
+  processingAccount: { en: "Setting up your account...", ur: "آپ کا اکاؤنٹ تیار کیا جا رہا ہے..." },
+  adminPendingTitle: { en: "Registration submitted", ur: "رجسٹریشن جمع ہو گئی" },
+  adminPendingBody: {
+    en: "Your PDMA officer account is awaiting approval from a district coordinator. You'll be notified once your access is granted.",
+    ur: "آپ کا PDMA افسر اکاؤنٹ ضلعی کوآرڈینیٹر کی منظوری کا منتظر ہے۔ رسائی ملنے پر آپ کو مطلع کیا جائے گا۔",
+  },
+  farmerPendingBody: {
+    en: "Your farmer account details are being verified by your district PDMA office. This usually only takes a short while — you'll get access as soon as it's confirmed.",
+    ur: "آپ کے کسان اکاؤنٹ کی تفصیلات آپ کے ضلعی PDMA دفتر کی جانب سے تصدیق کی جا رہی ہیں۔ تصدیق ہوتے ہی آپ کو رسائی مل جائے گی۔",
+  },
+  backToHome: { en: "Back to Home", ur: "ہوم پیج پر واپس جائیں" },
+  signupSuccessFarmer: { en: "Account created — welcome to AgriWatch", ur: "اکاؤنٹ بن گیا — ایگری واچ میں خوش آمدید" },
+
+  // Severity / status badges (used across many pages)
+  sevNormal: { en: "Normal", ur: "معمول" },
+  sevModerate: { en: "Moderate", ur: "معتدل" },
+  sevSevere: { en: "Severe", ur: "شدید" },
+  sevExtreme: { en: "Extreme", ur: "انتہائی شدید" },
+  statusDelivered: { en: "Delivered", ur: "بھیج دیا گیا" },
+  statusUnderReview: { en: "Under Review", ur: "زیرِ غور" },
+  statusForwarded: { en: "Forwarded", ur: "آگے بھیجا گیا" },
+  statusResolved: { en: "Resolved", ur: "حل شدہ" },
+
+  // Admin — page headers
+  ptAdminOverviewTitle: { en: "Overview", ur: "جائزہ" },
+  ptAdminOverviewSub: { en: "National drought situation · updated every 10 days from satellite pass", ur: "قومی خشک سالی کی صورتحال · ہر 10 دن بعد سیٹلائٹ ڈیٹا سے اپ ڈیٹ" },
+  ptAdminMapTitle: { en: "Drought Monitoring Map", ur: "خشک سالی نگرانی نقشہ" },
+  ptAdminMapSub: { en: "District-level severity from Sentinel-2, CHIRPS, SMAP & ERA5", ur: "سیٹلائٹ ڈیٹا سے ضلعی سطح کی شدت" },
+  ptAdminPredictionsTitle: { en: "Drought Prediction", ur: "خشک سالی پیش گوئی" },
+  ptAdminPredictionsSub: { en: "Random Forest model — 30-day forward severity forecast", ur: "اے آئی ماڈل — 30 دن کی پیش گوئی" },
+  ptAdminAlertsTitle: { en: "Alert Management", ur: "اطلاعات کا انتظام" },
+  ptAdminAlertsSub: { en: "Create and dispatch SMS + push notifications to farmers and the public", ur: "کسانوں اور عوام کو ایس ایم ایس اور اطلاعات بھیجیں" },
+  ptAdminUsersTitle: { en: "User Management", ur: "صارفین کا انتظام" },
+  ptAdminUsersSub: { en: "Registered Farmers, General Public, and PDMA Officers", ur: "رجسٹرڈ کسان، عام شہری اور پی ڈی ایم اے افسران" },
+  ptAdminComplaintsTitle: { en: "Assigned Drought Reports", ur: "تفویض کردہ خشک سالی کی رپورٹس" },
+  ptAdminComplaintsSub: { en: "Explicitly assigned reports within your verified area", ur: "آپ کے تصدیق شدہ علاقے میں تفویض کردہ رپورٹس" },
+  ptAdminReportsTitle: { en: "Automated Reports", ur: "خودکار رپورٹس" },
+  ptAdminReportsSub: { en: "Generate PDF drought situation reports — replaces manual PDMA paperwork", ur: "خشک سالی کی PDF رپورٹس بنائیں" },
+  ptAdminPublicRegTitle: { en: "Public Registrations", ur: "عوامی رجسٹریشن" },
+  ptAdminPublicRegSub: { en: "Outreach statistics for General Public users, by district", ur: "ضلع کے مطابق عوامی رجسٹریشن کے اعدادوشمار" },
+  ptAdminSettingsTitle: { en: "Settings", ur: "ترتیبات" },
+  ptAdminSettingsSub: { en: "Account and system preferences", ur: "اکاؤنٹ اور نظام کی ترجیحات" },
+
+  // Farmer — page headers
+  ptFarmerCropsTitle: { en: "AI Crop Recommendations", ur: "اے آئی فصل کی تجاویز" },
+  ptFarmerIrrigationTitle: { en: "Irrigation Scheduler", ur: "آبپاشی شیڈول" },
+  ptFarmerIrrigationSub: { en: "A 7-day plan built from live weather, your crop, and its growth stage", ur: "زندہ موسمی معلومات، آپ کی فصل اور اس کے مرحلے کی بنیاد پر 7 دن کا منصوبہ" },
+  ptFarmerYieldTitle: { en: "Yield Risk Assessment", ur: "پیداواری خطرے کا جائزہ" },
+  ptFarmerAlertsTitle: { en: "Alerts", ur: "اطلاعات" },
+  ptFarmerAlertsSub: { en: "Full-season alert log for your district", ur: "آپ کے ضلع کے لیے مکمل موسمی اطلاعات کی فہرست" },
+  ptFarmerComplaintsTitle: { en: "Report Drought Situation", ur: "خشک سالی کی صورتحال رپورٹ کریں" },
+  ptFarmerComplaintsSub: { en: "Submit a drought situation for AgriWatch admin review", ur: "ایگری واچ ایڈمن کے جائزے کے لیے خشک سالی کی صورتحال رپورٹ کریں" },
+  ptFarmerSettingsTitle: { en: "Settings", ur: "ترتیبات" },
+  ptFarmerSettingsSub: { en: "Profile and language preference", ur: "پروفائل اور زبان کی ترجیح" },
+
+  // Public — page headers
+  ptPublicHomeTitle: { en: "Regional Drought Status", ur: "علاقائی خشک سالی کی صورتحال" },
+  ptPublicMapTitle: { en: "Regional Risk Map", ur: "علاقائی خطرہ نقشہ" },
+  ptPublicMapSub: { en: "Explore drought conditions across Pakistan — read-only", ur: "پاکستان بھر میں خشک سالی کی صورتحال دیکھیں" },
+  ptPublicAlertsTitle: { en: "Drought Alerts", ur: "خشک سالی کی اطلاعات" },
+  ptPublicAlertsSub: { en: "Full-season alert log for your district — read-only", ur: "آپ کے ضلع کی مکمل موسمی اطلاعات" },
+  ptPublicAwarenessTitle: { en: "Awareness & Tips", ur: "آگاہی اور تجاویز" },
+  ptPublicAwarenessSub: { en: "Water conservation and drought preparedness guidance", ur: "پانی کی بچت اور خشک سالی سے بچاؤ کی رہنمائی" },
+  ptPublicSettingsTitle: { en: "Settings", ur: "ترتیبات" },
+  ptPublicSettingsSub: { en: "District and language preference", ur: "ضلع اور زبان کی ترجیح" },
+
+  // Crop calendar (shared)
+  ptCropCalendarTitle: { en: "Seasonal Crop Calendar", ur: "موسمی فصل کیلنڈر" },
+  ptCropCalendarSub: { en: "Pakistan's rabi/kharif calendar — sowing, irrigation, fertilizer & disease watch", ur: "پاکستان کا ربیع/خریف کیلنڈر — بوائی، آبپاشی، کھاد اور بیماری سے آگاہی" },
+
+  // Misc small labels reused often
+  latestAlert: { en: "Latest Alert", ur: "تازہ ترین اطلاع" },
+  noActiveAlerts: { en: "No active alerts for your district.", ur: "آپ کے ضلع کے لیے کوئی فعال اطلاع نہیں۔" },
+  weeklyGuidanceLabel: { en: "This week's guidance", ur: "اس ہفتے کی رہنمائی" },
+  currentStatus: { en: "Current Status", ur: "موجودہ صورتحال" },
+  activeAlert: { en: "Active Alert", ur: "فعال اطلاع" },
+  noActiveAlertsShort: { en: "No active alerts.", ur: "کوئی فعال اطلاع نہیں۔" },
+  welcomeGreeting: { en: "Welcome", ur: "خوش آمدید" },
+  updatedEvery10Days: { en: "Updated every 10 days from satellite pass", ur: "ہر 10 دن بعد سیٹلائٹ ڈیٹا سے اپ ڈیٹ" },
+  weeklyGuidanceHeading: { en: "4 recommendations based on current drought severity, crop stage, and weather", ur: "خشک سالی کی شدت، فصل کے مرحلے اور موسم کی بنیاد پر 4 تجاویز" },
+  recSourcedNote: { en: "Recommendations sourced from PARC guidelines and updated with each satellite pass.", ur: "تجاویز PARC رہنما اصولوں سے حاصل کی گئی ہیں اور ہر سیٹلائٹ گزر کے ساتھ اپ ڈیٹ ہوتی ہیں۔" },
+
+  // Profile dropdown + editable profile card
+  yourProfile: { en: "Your Profile", ur: "آپ کی پروفائل" },
+  signOut: { en: "Sign Out", ur: "سائن آؤٹ" },
+  editProfile: { en: "Edit Profile", ur: "پروفائل میں ترمیم کریں" },
+  saveChanges: { en: "Save Changes", ur: "تبدیلیاں محفوظ کریں" },
+  cancel: { en: "Cancel", ur: "منسوخ کریں" },
+  fullName: { en: "Full Name", ur: "پورا نام" },
+  district: { en: "District", ur: "ضلع" },
+  tehsil: { en: "Tehsil", ur: "تحصیل" },
+  primaryCrop: { en: "Primary Crop", ur: "بنیادی فصل" },
+  farmSizeLabel: { en: "Farm Size", ur: "رقبہ" },
+  notSet: { en: "Not set", ur: "مقرر نہیں" },
+  profileUpdated: { en: "Profile updated", ur: "پروفائل اپ ڈیٹ ہو گئی" },
+  profileUpdateFailed: { en: "Couldn't save changes. Try again.", ur: "تبدیلیاں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔" },
+  profileCardSub: { en: "View and edit your profile details", ur: "اپنی پروفائل کی تفصیلات دیکھیں اور ترمیم کریں" },
+  demoProfileNote: { en: "You're not signed in with an account yet, so changes are saved on this device only.", ur: "آپ نے ابھی تک اکاؤنٹ سے سائن ان نہیں کیا، اس لیے تبدیلیاں صرف اس ڈیوائس پر محفوظ ہوں گی۔" },
+};
+
+export default dict;
